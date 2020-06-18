@@ -1,2 +1,5 @@
 # Project exclude paths
 /target/
+/copy.bat
+/.idea/
+/out/
