@@ -1,0 +1,19 @@
+name: LuckyCrates
+authors: [Fefo6644]
+version: ${project.version}
+main: me.fefo.luckycrates.Main
+load: POSTWORLD
+
+permissions:
+  luckycrates.use:
+    default: op
+    description: Permission used to allow a player to execute the /luckycrates command
+    children: {}
+
+commands:
+  luckycrates:
+    aliases: [lc]
+    permission: luckycrates.use
+    permission-message: "§cYou are not allowed to run this command"
+    usage: "§cUsage: /luckycrates [set/setpersistent] <crate type>\n§cUsage: /luckycrates remove"
+    description: Command used to place and remove spinny crates

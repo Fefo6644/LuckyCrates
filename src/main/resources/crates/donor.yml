@@ -1,0 +1,22 @@
+requiresPerm: group.vip
+texture: "1b6730de7e5b941efc6e8cbaf5755f9421a20de871759682cd888cc4a81282"
+secondsUntilReappearance: [30, 60]
+rewards:
+  - rarity: 100
+    items:
+      - item: APPLE
+        amount: 5
+        unbreakable: false
+        enchants: {}
+      - item: ARROW
+        amount: 16
+        unbreakable: false
+        enchants: {}
+      - item: BOW
+        amount: 1
+        unbreakable: false
+        enchants:
+          - enchant: DURABILITY
+            level: 2
+          - enchant: ARROW_DAMAGE
+            level: 1

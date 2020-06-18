@@ -1,0 +1,4 @@
+# Crate spin rate in revolutions per minute.
+rpm: 45.0
+noPermMessage: "&c&oYou need VIP rank or higher to open this crate"
+instantGivePerm: group.vip
