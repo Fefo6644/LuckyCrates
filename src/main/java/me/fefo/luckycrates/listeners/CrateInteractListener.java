@@ -102,7 +102,7 @@ public final class CrateInteractListener implements Listener {
 
                     player.getWorld()
                           .dropItem(sc.getLocation()
-                                      .add(0, 5, 0),
+                                      .add(0, 1, 0),
                                     randomLoot.items[index++])
                           .setVelocity(new Vector());
                     player.playSound(player.getLocation(),

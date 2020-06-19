@@ -42,12 +42,11 @@ public final class CrateData {
     }
 
     List<Map<?, ?>> rewardsListYaml = crateYaml.getMapList("rewards");
-    int sumOfRarities = 0;
     for (final Map<?, ?> rewardYaml : rewardsListYaml) {
-      assert ((Integer) rewardYaml.get("rarity")) > 0;
-      sumOfRarities += ((Integer) rewardYaml.get("rarity"));
+      if (((Integer) rewardYaml.get("rarity")) <= 0) {
+        throw new AssertionError("All rarities must be greater than zero");
+      }
     }
-    assert sumOfRarities == 100;
 
     for (final Map<?, ?> rewardYaml : rewardsListYaml) {
       final ItemStack[] items = new ItemStack[((List<?>) rewardYaml.get("items")).size()];

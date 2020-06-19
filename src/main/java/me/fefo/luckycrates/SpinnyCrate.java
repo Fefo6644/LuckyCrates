@@ -38,7 +38,9 @@ public final class SpinnyCrate {
       }
 
       try {
-        final CrateData crateData = new CrateData(crateFile.getName().replace(".yml", ""),
+        final CrateData crateData = new CrateData(crateFile.getName()
+                                                           .replace(".yml", "")
+                                                           .replace(' ', '_'),
                                                   YamlConfiguration.loadConfiguration(crateFile));
         categorisedCrates.put(crateData.getName(), crateData);
       } catch (AssertionError ex) {
