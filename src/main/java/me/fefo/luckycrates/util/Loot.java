@@ -1,4 +1,4 @@
-package me.fefo.luckycrates.utils;
+package me.fefo.luckycrates.util;
 
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;

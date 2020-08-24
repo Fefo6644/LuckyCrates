@@ -1,6 +1,6 @@
 package me.fefo.luckycrates.listeners;
 
-import me.fefo.luckycrates.Main;
+import me.fefo.luckycrates.LuckyCrates;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -14,18 +14,18 @@ import java.io.IOException;
 import java.util.UUID;
 
 public final class CrateRemoveListener implements Listener {
-  private final Main main;
+  private final LuckyCrates plugin;
 
-  public CrateRemoveListener(Main main) { this.main = main; }
+  public CrateRemoveListener(LuckyCrates plugin) { this.plugin = plugin; }
 
   @EventHandler
   public void crateRemove(@NotNull EntityDamageByEntityEvent e) {
     final Entity damaged = e.getEntity();
     final UUID uuid = damaged.getUniqueId();
 
-    if (main.playersRemovingCrate.size() == 0 ||
-        main.spinnyCrates.size() == 0 ||
-        !main.spinnyCrates.containsKey(uuid)) {
+    if (plugin.playersRemovingCrate.size() == 0 ||
+        plugin.spinnyCrates.size() == 0 ||
+        !plugin.spinnyCrates.containsKey(uuid)) {
       return;
     }
 
@@ -35,14 +35,14 @@ public final class CrateRemoveListener implements Listener {
       final Entity damager = e.getDamager();
 
       if (damager instanceof Player &&
-          main.playersRemovingCrate.remove(damager.getUniqueId())) {
-        main.spinnyCrates.get(uuid).kill();
-        main.spinnyCrates.remove(uuid);
-        main.cratesDataYaml.set(uuid.toString(), null);
+          plugin.playersRemovingCrate.remove(damager.getUniqueId())) {
+        plugin.spinnyCrates.get(uuid).kill();
+        plugin.spinnyCrates.remove(uuid);
+        plugin.cratesDataYaml.set(uuid.toString(), null);
         try {
-          main.cratesDataYaml.save(main.cratesDataFile);
+          plugin.cratesDataYaml.save(plugin.cratesDataFile);
         } catch (IOException ex) {
-          main.getLogger().severe("Could not save data file!");
+          plugin.getLogger().severe("Could not save data file!");
           ex.printStackTrace();
         }
         damager.sendMessage(ChatColor.AQUA + "Crate removed");

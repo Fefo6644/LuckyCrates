@@ -1,9 +1,10 @@
 package me.fefo.luckycrates.listeners;
 
-import me.fefo.luckycrates.Main;
+import me.fefo.luckycrates.LuckyCrates;
 import me.fefo.luckycrates.SpinnyCrate;
-import me.fefo.luckycrates.utils.CrateData;
-import me.fefo.luckycrates.utils.Loot;
+import me.fefo.luckycrates.util.ColorFormat;
+import me.fefo.luckycrates.util.CrateData;
+import me.fefo.luckycrates.util.Loot;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -25,43 +26,42 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public final class CrateInteractListener implements Listener {
-  private final Main main;
+  private final LuckyCrates plugin;
 
-  public CrateInteractListener(Main main) { this.main = main; }
+  public CrateInteractListener(LuckyCrates plugin) { this.plugin = plugin; }
 
   @EventHandler
   public void onCrateInteract(@NotNull PlayerInteractAtEntityEvent e) {
-    if (main.spinnyCrates.size() > 0) {
+    if (plugin.spinnyCrates.size() > 0) {
       final Entity entity = e.getRightClicked();
       final UUID uuid = entity.getUniqueId();
 
       if (entity instanceof ArmorStand) {
-        if (main.spinnyCrates.containsKey(uuid)) {
+        if (plugin.spinnyCrates.containsKey(uuid)) {
           e.setCancelled(true);
-          if (main.playersRemovingCrate.contains(e.getPlayer().getUniqueId())) {
+          if (plugin.playersRemovingCrate.contains(e.getPlayer().getUniqueId())) {
             return;
           }
 
-          final SpinnyCrate sc = main.spinnyCrates.get(uuid);
+          final SpinnyCrate sc = plugin.spinnyCrates.get(uuid);
           if (sc.getHiddenUntil() == 0L) {
             final CrateData cratePicked = SpinnyCrate.categorisedCrates.get(sc.getCrateName());
             if (cratePicked.requiresPerm() &&
                 !e.getPlayer().hasPermission(cratePicked.getPermRequired())) {
-              e.getPlayer().sendMessage(main.getConfig()
-                                            .getString("noPermMessage")
-                                            .replace('&', '§'));
+              e.getPlayer().sendMessage(ColorFormat.format(plugin.getConfig()
+                                                                 .getString("noPermMessage")));
               return;
             }
 
             if (sc.shouldDisappear()) {
               final long hiddenUntil = Instant.now().toEpochMilli() + cratePicked.getRandomTime();
               sc.setHiddenUntil(hiddenUntil);
-              final ConfigurationSection cs = main.cratesDataYaml.getConfigurationSection(sc.getUUID().toString());
-              cs.set(Main.YAML_HIDDEN_UNTIL, hiddenUntil);
+              final ConfigurationSection cs = plugin.cratesDataYaml.getConfigurationSection(sc.getUUID().toString());
+              cs.set(LuckyCrates.YAML_HIDDEN_UNTIL, hiddenUntil);
               try {
-                main.cratesDataYaml.save(main.cratesDataFile);
+                plugin.cratesDataYaml.save(plugin.cratesDataFile);
               } catch (IOException ex) {
-                main.getLogger().severe("Could not save data file!");
+                plugin.getLogger().severe("Could not save data file!");
                 ex.printStackTrace();
               }
             }
@@ -69,9 +69,9 @@ public final class CrateInteractListener implements Listener {
             final Player player = e.getPlayer();
             final Loot randomLoot = cratePicked.getRandomLoot();
 
-            for (String command : randomLoot.commands) {
-              main.getServer().dispatchCommand(main.getServer().getConsoleSender(),
-                                               command.replace("%player%", player.getName()));
+            for (final String command : randomLoot.commands) {
+              plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
+                                                 command.replace("%player%", player.getName()));
             }
 
             player.playSound(player.getLocation(),
@@ -79,9 +79,9 @@ public final class CrateInteractListener implements Listener {
                              SoundCategory.MASTER,
                              1.0f, 1.0f);
 
-            if (player.hasPermission(main.getConfig().getString("instantGivePerm"))) {
+            if (player.hasPermission(plugin.getConfig().getString("instantGivePerm"))) {
               final HashMap<Integer, ItemStack> notStoredItems = player.getInventory().addItem(randomLoot.items);
-              for (ItemStack item : notStoredItems.values()) {
+              for (final ItemStack item : notStoredItems.values()) {
                 player.getWorld()
                       .dropItem(player.getEyeLocation()
                                       .subtract(0.0, 1.0, 0.0),
@@ -109,9 +109,11 @@ public final class CrateInteractListener implements Listener {
                                      Sound.BLOCK_TRIPWIRE_CLICK_OFF,
                                      SoundCategory.MASTER,
                                      1.0f, 1.0f);
+                  } else {
+                    cancel();
                   }
                 }
-              }.runTaskTimer(main, 0, 20 / 3);
+              }.runTaskTimer(plugin, 0, 20 / 3);
             }
           }
         }

@@ -1,6 +1,6 @@
 package me.fefo.luckycrates;
 
-import me.fefo.luckycrates.utils.CrateData;
+import me.fefo.luckycrates.util.CrateData;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public final class SpinnyCrate {
-  private static Main main;
+  private static LuckyCrates plugin;
   public static final HashMap<String, CrateData> categorisedCrates = new HashMap<>();
 
   private final String crateName;
@@ -25,11 +25,11 @@ public final class SpinnyCrate {
   private final boolean shouldDisappear;
   private long hiddenUntil = 0L;
 
-  public static void setMain(Main main) { SpinnyCrate.main = main; }
+  public static void setPlugin(LuckyCrates plugin) { SpinnyCrate.plugin = plugin; }
 
   public static void reloadCrates() {
     categorisedCrates.clear();
-    for (File crateFile : main.cratesListFolder.listFiles()) {
+    for (File crateFile : plugin.cratesListFolder.listFiles()) {
       if (!crateFile.getName().endsWith(".yml")) {
         continue;
       }
@@ -44,8 +44,8 @@ public final class SpinnyCrate {
                                                   YamlConfiguration.loadConfiguration(crateFile));
         categorisedCrates.put(crateData.getName(), crateData);
       } catch (AssertionError ex) {
-        main.getLogger().warning("Crate \"" + crateFile.getName() + "\" not loaded!");
-        main.getLogger().warning(ex.getMessage());
+        plugin.getLogger().warning("Crate \"" + crateFile.getName() + "\" not loaded!");
+        plugin.getLogger().warning(ex.getMessage());
       }
     }
   }
@@ -59,7 +59,7 @@ public final class SpinnyCrate {
 
     for (Entity e : nearbyEntities) {
       if (e instanceof ArmorStand &&
-          main.spinnyCrates.containsKey(e.getUniqueId())) {
+          plugin.spinnyCrates.containsKey(e.getUniqueId())) {
         return true;
       }
     }
@@ -96,7 +96,7 @@ public final class SpinnyCrate {
                      @NotNull final UUID uuid,
                      final long hiddenUntil,
                      final boolean shouldDisappear) {
-    as = ((ArmorStand)main.getServer().getEntity(uuid));
+    as = ((ArmorStand) plugin.getServer().getEntity(uuid));
     this.crateName = crateName;
     this.uuid = uuid;
     this.hiddenUntil = hiddenUntil;

@@ -15,9 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class CommanderKeen implements CommandExecutor, TabCompleter {
-  private final Main main;
+  private final LuckyCrates plugin;
 
-  public CommanderKeen(@NotNull Main main) { this.main = main; }
+  public CommanderKeen(@NotNull LuckyCrates plugin) { this.plugin = plugin; }
 
   @Override
   public boolean onCommand(CommandSender sender,
@@ -33,13 +33,13 @@ public final class CommanderKeen implements CommandExecutor, TabCompleter {
       case 0: {
         sender.sendMessage(ChatColor.DARK_AQUA + "LuckyCrates " +
                            ChatColor.GRAY + "- " +
-                           ChatColor.AQUA + "v" + main.getDescription().getVersion());
+                           ChatColor.AQUA + "v" + plugin.getDescription().getVersion());
         return true;
       }
 
       case 1: {
         if (args[0].equalsIgnoreCase("reload")) {
-          main.reload();
+          plugin.reload();
           sender.sendMessage(ChatColor.AQUA + "Files reloaded successfully!");
           return true;
         }
@@ -48,14 +48,14 @@ public final class CommanderKeen implements CommandExecutor, TabCompleter {
           return false;
         }
 
-        if (main.spinnyCrates.size() > 0) {
-          if (main.playersRemovingCrate.remove(((Player)sender).getUniqueId())) {
+        if (plugin.spinnyCrates.size() > 0) {
+          if (plugin.playersRemovingCrate.remove(((Player) sender).getUniqueId())) {
             sender.sendMessage(ChatColor.AQUA + "Action cancelled");
           } else {
-            main.playersRemovingCrate.add(((Player)sender).getUniqueId());
+            plugin.playersRemovingCrate.add(((Player) sender).getUniqueId());
             final String[] messages = new String[] {
-                    ChatColor.AQUA + "Hit a crate to remove it",
-                    ChatColor.AQUA + "Run the command again to cancel"
+                ChatColor.AQUA + "Hit a crate to remove it",
+                ChatColor.AQUA + "Run the command again to cancel"
             };
             sender.sendMessage(messages);
           }
@@ -76,27 +76,27 @@ public final class CommanderKeen implements CommandExecutor, TabCompleter {
           return false;
         }
 
-        final Location loc = ((Player)sender).getLocation().clone();
+        final Location loc = ((Player) sender).getLocation().clone();
 
         if (SpinnyCrate.isPlaceOccupied(loc)) {
           final String[] messages = new String[] {
-                  ChatColor.RED + "This place is already occupied by another crate!",
-                  ChatColor.RED + "Please, select another location"
+              ChatColor.RED + "This place is already occupied by another crate!",
+              ChatColor.RED + "Please, select another location"
           };
           sender.sendMessage(messages);
         } else {
           final SpinnyCrate sc = new SpinnyCrate(loc, args[1], shouldDisappear);
-          main.spinnyCrates.put(sc.getUUID(), sc);
+          plugin.spinnyCrates.put(sc.getUUID(), sc);
           sender.sendMessage(ChatColor.AQUA + "Crate placed successfully!");
 
-          final ConfigurationSection cs = main.cratesDataYaml.createSection(sc.getUUID().toString());
-          cs.set(Main.YAML_HIDDEN_UNTIL, 0L);
-          cs.set(Main.YAML_SHOULD_DISAPPEAR, shouldDisappear);
-          cs.set(Main.YAML_CRATE_TYPE, args[1]);
+          final ConfigurationSection cs = plugin.cratesDataYaml.createSection(sc.getUUID().toString());
+          cs.set(LuckyCrates.YAML_HIDDEN_UNTIL, 0L);
+          cs.set(LuckyCrates.YAML_SHOULD_DISAPPEAR, shouldDisappear);
+          cs.set(LuckyCrates.YAML_CRATE_TYPE, args[1]);
           try {
-            main.cratesDataYaml.save(main.cratesDataFile);
+            plugin.cratesDataYaml.save(plugin.cratesDataFile);
           } catch (IOException e) {
-            main.getLogger().severe("Could not save data file!");
+            plugin.getLogger().severe("Could not save data file!");
             e.printStackTrace();
           }
         }

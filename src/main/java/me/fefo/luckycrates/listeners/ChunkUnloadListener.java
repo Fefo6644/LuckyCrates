@@ -1,6 +1,6 @@
 package me.fefo.luckycrates.listeners;
 
-import me.fefo.luckycrates.Main;
+import me.fefo.luckycrates.LuckyCrates;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
@@ -8,13 +8,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
 public final class ChunkUnloadListener implements Listener {
-  private final Main main;
+  private final LuckyCrates plugin;
 
-  public ChunkUnloadListener(Main main) { this.main = main; }
+  public ChunkUnloadListener(LuckyCrates plugin) { this.plugin = plugin; }
 
   @EventHandler
   public void onChunkUnload(ChunkUnloadEvent event) {
-    if (main.spinnyCrates.size() == 0) {
+    if (plugin.spinnyCrates.size() == 0) {
       return;
     }
 
@@ -23,7 +23,7 @@ public final class ChunkUnloadListener implements Listener {
         continue;
       }
 
-      main.spinnyCrates.remove(entity.getUniqueId());
+      plugin.spinnyCrates.remove(entity.getUniqueId());
     }
   }
 }

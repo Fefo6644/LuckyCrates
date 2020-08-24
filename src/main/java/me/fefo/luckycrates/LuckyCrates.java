@@ -6,6 +6,11 @@ import me.fefo.luckycrates.listeners.CrateInteractListener;
 import me.fefo.luckycrates.listeners.CrateRemoveListener;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -17,7 +22,7 @@ import java.util.Hashtable;
 import java.util.Set;
 import java.util.UUID;
 
-public final class Main extends JavaPlugin {
+public final class LuckyCrates extends JavaPlugin implements Listener {
   public static final String YAML_HIDDEN_UNTIL = "hiddenUntil";
   public static final String YAML_SHOULD_DISAPPEAR = "shouldDisappear";
   public static final String YAML_CRATE_TYPE = "crateType";
@@ -31,7 +36,7 @@ public final class Main extends JavaPlugin {
 
   @Override
   public void onEnable() {
-    SpinnyCrate.setMain(this);
+    SpinnyCrate.setPlugin(this);
 
     try {
       saveDefaultConfig();

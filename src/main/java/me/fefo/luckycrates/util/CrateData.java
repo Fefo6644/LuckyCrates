@@ -1,12 +1,13 @@
-package me.fefo.luckycrates.utils;
+package me.fefo.luckycrates.util;
 
-import me.fefo.luckycrates.utils.hex.utils.Skull;
+import me.fefo.luckycrates.util.hex.util.Skull;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
@@ -60,9 +61,8 @@ public final class CrateData {
 
         if (itemYaml.containsKey("displayName")) {
           final ItemMeta itemMeta = items[i].getItemMeta();
-          itemMeta.setDisplayName("" + ChatColor.RESET +
-                                  ((String) itemYaml.get("displayName"))
-                                      .replace('&', '§'));
+          itemMeta.setDisplayName(ChatColor.RESET +
+                                  ColorFormat.format((String) itemYaml.get("displayName")));
           items[i].setItemMeta(itemMeta);
         }
 
@@ -84,17 +84,26 @@ public final class CrateData {
 
         final ItemMeta itemMeta = items[i].getItemMeta();
         itemMeta.setUnbreakable(((Boolean) itemYaml.get("unbreakable")));
-        items[i].setItemMeta(itemMeta);
 
         if (!(itemYaml.get("enchants") instanceof List)) {
+          items[i].setItemMeta(itemMeta);
           continue;
         }
 
         List<?> enchantsListYaml = (List<?>) itemYaml.get("enchants");
         for (final Object enchantYamlUncasted : enchantsListYaml) {
           final Map<?, ?> enchantYaml = (Map<?, ?>) enchantYamlUncasted;
-          items[i].addUnsafeEnchantment(Enchantment.getByName(((String) enchantYaml.get("enchant"))),
-                                        ((Integer) enchantYaml.get("level")));
+
+          if (!items[i].getType().equals(Material.ENCHANTED_BOOK)) {
+            items[i].addUnsafeEnchantment(Enchantment.getByName((String) enchantYaml.get("enchant")),
+                                          (Integer) enchantYaml.get("level"));
+          } else {
+            ((EnchantmentStorageMeta) itemMeta)
+                .addStoredEnchant(Enchantment.getByName((String) enchantYaml.get("enchant")),
+                                  (Integer) enchantYaml.get("level"),
+                                  true);
+            items[i].setItemMeta(itemMeta);
+          }
         }
       }
 

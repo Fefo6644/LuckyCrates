@@ -1,7 +1,7 @@
 name: LuckyCrates
 authors: [Fefo6644]
 version: ${project.version}
-main: me.fefo.luckycrates.Main
+main: me.fefo.luckycrates.LuckyCrates
 load: POSTWORLD
 
 permissions:

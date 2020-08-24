@@ -1,4 +1,4 @@
-package me.fefo.luckycrates.utils.hex.utils;
+package me.fefo.luckycrates.util.hex.util;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.WordUtils;
