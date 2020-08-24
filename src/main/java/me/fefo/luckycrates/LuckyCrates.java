@@ -22,7 +22,7 @@ import java.util.Hashtable;
 import java.util.Set;
 import java.util.UUID;
 
-public final class LuckyCrates extends JavaPlugin implements Listener {
+public final class LuckyCrates extends JavaPlugin {
   public static final String YAML_HIDDEN_UNTIL = "hiddenUntil";
   public static final String YAML_SHOULD_DISAPPEAR = "shouldDisappear";
   public static final String YAML_CRATE_TYPE = "crateType";
