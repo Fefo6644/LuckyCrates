@@ -106,6 +106,10 @@
 					<groupId>mysql</groupId>
 					<artifactId>mysql-connector-java</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>com.mojang</groupId>
+					<artifactId>brigadier</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 

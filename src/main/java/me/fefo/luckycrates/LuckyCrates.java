@@ -1,6 +1,5 @@
 package me.fefo.luckycrates;
 
-import me.fefo.facilites.ColorFormat;
 import me.fefo.facilites.TaskUtil;
 import me.fefo.luckycrates.listeners.ChunkLoadListener;
 import me.fefo.luckycrates.listeners.ChunkUnloadListener;
@@ -8,10 +7,6 @@ import me.fefo.luckycrates.listeners.CrateInteractListener;
 import me.fefo.luckycrates.listeners.CrateRemoveListener;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -103,6 +98,11 @@ public final class LuckyCrates extends JavaPlugin {
         }
       }
     }, 0L, 20L);
+  }
+
+  @Override
+  public void onDisable() {
+    CommanderKeen.clearCaches();
   }
 
   @Override

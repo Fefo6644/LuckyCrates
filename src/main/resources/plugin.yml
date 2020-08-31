@@ -15,5 +15,4 @@ commands:
     aliases: [ lc ]
     permission: luckycrates.use
     permission-message: "§cYou are not allowed to run this command"
-    usage: "§cUsages:\n  §c/luckycrates\n  §c/luckycrates nearest\n  §c/luckycrates reload\n  §c/luckycrates remove [nearest]\n  §c/luckycrates (set|setpersistent) <crate type>"
     description: Command used to place and remove spinny crates
