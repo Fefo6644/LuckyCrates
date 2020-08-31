@@ -214,7 +214,26 @@ public final class CommanderKeen implements TabExecutor {
     final UUID nearestCrate = getNearestCrate(player);
 
     if (nearestCrate != null) {
+      final String type = plugin.spinnyCrates.get(nearestCrate).getCrateName();
+      final Location crateLocation = plugin.spinnyCrates.get(nearestCrate).getLocation();
+      assert crateLocation != null;
+      final int x = crateLocation.getBlockX();
+      final int y = crateLocation.getBlockY();
+      final int z = crateLocation.getBlockZ();
+
       plugin.spinnyCrates.remove(nearestCrate).kill();
+      plugin.cratesDataYaml.set(nearestCrate.toString(), null);
+
+      try {
+        plugin.cratesDataYaml.save(plugin.cratesDataFile);
+      } catch (IOException ex) {
+        plugin.getLogger().severe("Could not save data file!");
+        ex.printStackTrace();
+      }
+
+      player.sendMessage(ColorFormat.format("&9" + type + " &bcrate removed at " +
+                                            "&7x:" + x + " y:" + y + " z:" + z));
+
     } else {
       player.sendMessage(ColorFormat.format("&cCouldn't find the nearest crate within loaded chunks in this world"));
     }

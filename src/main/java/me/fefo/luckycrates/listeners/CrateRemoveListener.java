@@ -39,8 +39,7 @@ public final class CrateRemoveListener extends SelfRegisteringListener {
 
       if (damager instanceof Player &&
           plugin.playersRemovingCrate.remove(damager.getUniqueId())) {
-        plugin.spinnyCrates.get(uuid).kill();
-        plugin.spinnyCrates.remove(uuid);
+        plugin.spinnyCrates.remove(uuid).kill();
         plugin.cratesDataYaml.set(uuid.toString(), null);
         try {
           plugin.cratesDataYaml.save(plugin.cratesDataFile);
