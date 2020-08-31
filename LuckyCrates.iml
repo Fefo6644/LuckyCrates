@@ -41,6 +41,8 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.ow2.asm:asm-tree:6.1.1" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.ow2.asm:asm-analysis:6.1.1" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.bukkit:craftbukkit:1.12.2-R0.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: me.fefo:facilites:1.0" level="project" />
+    <orderEntry type="library" name="Maven: com.mojang:brigadier:1.0.17" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.jetbrains:annotations:19.0.0" level="project" />
   </component>
 </module>

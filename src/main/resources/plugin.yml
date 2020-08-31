@@ -1,5 +1,5 @@
 name: LuckyCrates
-authors: [Fefo6644]
+authors: [ Fefo6644 ]
 version: ${project.version}
 main: me.fefo.luckycrates.LuckyCrates
 load: POSTWORLD
@@ -12,8 +12,8 @@ permissions:
 
 commands:
   luckycrates:
-    aliases: [lc]
+    aliases: [ lc ]
     permission: luckycrates.use
     permission-message: "§cYou are not allowed to run this command"
-    usage: "§cUsage: /luckycrates [set/setpersistent] <crate type>\n§cUsage: /luckycrates remove"
+    usage: "§cUsages:\n  §c/luckycrates\n  §c/luckycrates nearest\n  §c/luckycrates reload\n  §c/luckycrates remove [nearest]\n  §c/luckycrates (set|setpersistent) <crate type>"
     description: Command used to place and remove spinny crates

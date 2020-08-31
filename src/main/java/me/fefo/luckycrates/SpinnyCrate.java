@@ -1,6 +1,7 @@
 package me.fefo.luckycrates;
 
 import me.fefo.luckycrates.util.CrateData;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
@@ -17,7 +18,7 @@ import java.util.UUID;
 
 public final class SpinnyCrate {
   private static LuckyCrates plugin;
-  public static final HashMap<String, CrateData> categorisedCrates = new HashMap<>();
+  public static final HashMap<String, CrateData> categorizedCrates = new HashMap<>();
 
   private final String crateName;
   private final @NotNull UUID uuid;
@@ -28,7 +29,7 @@ public final class SpinnyCrate {
   public static void setPlugin(LuckyCrates plugin) { SpinnyCrate.plugin = plugin; }
 
   public static void reloadCrates() {
-    categorisedCrates.clear();
+    categorizedCrates.clear();
     for (File crateFile : plugin.cratesListFolder.listFiles()) {
       if (!crateFile.getName().endsWith(".yml")) {
         continue;
@@ -42,7 +43,7 @@ public final class SpinnyCrate {
                                                            .replace(".yml", "")
                                                            .replace(' ', '_'),
                                                   YamlConfiguration.loadConfiguration(crateFile));
-        categorisedCrates.put(crateData.getName(), crateData);
+        categorizedCrates.put(crateData.getName(), crateData);
       } catch (AssertionError ex) {
         plugin.getLogger().warning("Crate \"" + crateFile.getName() + "\" not loaded!");
         plugin.getLogger().warning(ex.getMessage());
@@ -57,7 +58,7 @@ public final class SpinnyCrate {
     loc.setZ(loc.getBlockZ() + .5);
     final Collection<Entity> nearbyEntities = loc.getWorld().getNearbyEntities(loc, .0625, .0625, .0625);
 
-    for (Entity e : nearbyEntities) {
+    for (final Entity e : nearbyEntities) {
       if (e instanceof ArmorStand &&
           plugin.spinnyCrates.containsKey(e.getUniqueId())) {
         return true;
@@ -74,7 +75,7 @@ public final class SpinnyCrate {
     loc.setZ(loc.getBlockZ() + .5);
     loc.setYaw(.0f);
     loc.setPitch(.0f);
-    as = ((ArmorStand)loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND));
+    as = ((ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND));
     as.setHeadPose(EulerAngle.ZERO);
     as.setBodyPose(EulerAngle.ZERO);
     as.setLeftArmPose(EulerAngle.ZERO);
@@ -85,7 +86,7 @@ public final class SpinnyCrate {
     as.setVisible(false);
     as.setBasePlate(false);
     as.setSmall(false);
-    as.getEquipment().setHelmet(categorisedCrates.get(crateName).getSkull());
+    as.getEquipment().setHelmet(categorizedCrates.get(crateName).getSkull());
     uuid = as.getUniqueId();
 
     this.crateName = crateName;
@@ -96,7 +97,7 @@ public final class SpinnyCrate {
                      @NotNull final UUID uuid,
                      final long hiddenUntil,
                      final boolean shouldDisappear) {
-    as = ((ArmorStand) plugin.getServer().getEntity(uuid));
+    as = ((ArmorStand) Bukkit.getEntity(uuid));
     this.crateName = crateName;
     this.uuid = uuid;
     this.hiddenUntil = hiddenUntil;
@@ -111,13 +112,13 @@ public final class SpinnyCrate {
   }
 
   public long getHiddenUntil() { return hiddenUntil; }
-  public void setHiddenUntil(long hiddenUntil) {
+  public void setHiddenUntil(final long hiddenUntil) {
     this.hiddenUntil = hiddenUntil;
     if (hiddenUntil == 0L) {
       if (as == null) {
         return;
       }
-      as.getEquipment().setHelmet(categorisedCrates.get(crateName).getSkull());
+      as.getEquipment().setHelmet(categorizedCrates.get(crateName).getSkull());
     } else {
       if (as == null) {
         return;
@@ -149,15 +150,15 @@ public final class SpinnyCrate {
   public boolean shouldDisappear() { return shouldDisappear; }
 
   @Override
-  public boolean equals(@Nullable Object o) {
+  public boolean equals(@Nullable final Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SpinnyCrate that = (SpinnyCrate)o;
-    return uuid.equals(that.uuid);
+
+    return uuid.equals(((SpinnyCrate) o).uuid);
   }
 
   @Override

@@ -1,8 +1,10 @@
 package me.fefo.luckycrates.listeners;
 
+import me.fefo.facilites.ColorFormat;
+import me.fefo.facilites.SelfRegisteringListener;
+import me.fefo.facilites.TaskUtil;
 import me.fefo.luckycrates.LuckyCrates;
 import me.fefo.luckycrates.SpinnyCrate;
-import me.fefo.luckycrates.util.ColorFormat;
 import me.fefo.luckycrates.util.CrateData;
 import me.fefo.luckycrates.util.Loot;
 import org.bukkit.Material;
@@ -13,10 +15,9 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,11 +25,15 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
-public final class CrateInteractListener implements Listener {
+public final class CrateInteractListener extends SelfRegisteringListener {
   private final LuckyCrates plugin;
 
-  public CrateInteractListener(LuckyCrates plugin) { this.plugin = plugin; }
+  public CrateInteractListener(final LuckyCrates plugin) {
+    super(plugin);
+    this.plugin = plugin;
+  }
 
   @EventHandler
   public void onCrateInteract(@NotNull PlayerInteractAtEntityEvent e) {
@@ -45,7 +50,7 @@ public final class CrateInteractListener implements Listener {
 
           final SpinnyCrate sc = plugin.spinnyCrates.get(uuid);
           if (sc.getHiddenUntil() == 0L) {
-            final CrateData cratePicked = SpinnyCrate.categorisedCrates.get(sc.getCrateName());
+            final CrateData cratePicked = SpinnyCrate.categorizedCrates.get(sc.getCrateName());
             if (cratePicked.requiresPerm() &&
                 !e.getPlayer().hasPermission(cratePicked.getPermRequired())) {
               e.getPlayer().sendMessage(ColorFormat.format(plugin.getConfig()
@@ -88,32 +93,37 @@ public final class CrateInteractListener implements Listener {
                                 item);
               }
             } else {
-              new BukkitRunnable() {
+              TaskUtil.sync(new Consumer<BukkitTask>() {
                 int index = 0;
 
                 @Override
-                public void run() {
-                  if (index < randomLoot.items.length) {
-                    if (randomLoot.items[index] == null ||
-                        randomLoot.items[index].getType().equals(Material.AIR)) {
-                      ++index;
-                      return;
+                public void accept(final BukkitTask task) {
+                  while (true) {
+                    if (index < randomLoot.items.length) {
+                      if (randomLoot.items[index] == null ||
+                          randomLoot.items[index].getType() == Material.AIR) {
+                        ++index;
+                        continue;
+                      }
+
+                      player.getWorld()
+                            .dropItem(sc.getLocation()
+                                        .add(0, 1, 0),
+                                      randomLoot.items[index++])
+                            .setVelocity(new Vector());
+                      player.playSound(player.getLocation(),
+                                       Sound.BLOCK_TRIPWIRE_CLICK_OFF,
+                                       SoundCategory.MASTER,
+                                       1.0f, 1.0f);
+
+                    } else {
+                      task.cancel();
                     }
 
-                    player.getWorld()
-                          .dropItem(sc.getLocation()
-                                      .add(0, 1, 0),
-                                    randomLoot.items[index++])
-                          .setVelocity(new Vector());
-                    player.playSound(player.getLocation(),
-                                     Sound.BLOCK_TRIPWIRE_CLICK_OFF,
-                                     SoundCategory.MASTER,
-                                     1.0f, 1.0f);
-                  } else {
-                    cancel();
+                    return;
                   }
                 }
-              }.runTaskTimer(plugin, 0, 20 / 3);
+              }, 0L, 20L / 3L);
             }
           }
         }

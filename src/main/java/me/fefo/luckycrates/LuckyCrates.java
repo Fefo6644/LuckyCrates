@@ -1,16 +1,17 @@
 package me.fefo.luckycrates;
 
+import me.fefo.facilites.ColorFormat;
+import me.fefo.facilites.TaskUtil;
 import me.fefo.luckycrates.listeners.ChunkLoadListener;
 import me.fefo.luckycrates.listeners.ChunkUnloadListener;
 import me.fefo.luckycrates.listeners.CrateInteractListener;
 import me.fefo.luckycrates.listeners.CrateRemoveListener;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -37,6 +38,7 @@ public final class LuckyCrates extends JavaPlugin {
   @Override
   public void onEnable() {
     SpinnyCrate.setPlugin(this);
+    TaskUtil.setPlugin(this);
 
     try {
       saveDefaultConfig();
@@ -50,7 +52,7 @@ public final class LuckyCrates extends JavaPlugin {
       }
       cratesDataFile = new File(getDataFolder(), "cratesData.yml");
       cratesDataFile.createNewFile();
-      reload();
+      reloadConfig();
     } catch (IOException e) {
       getLogger().severe("Could not create data file!");
       e.printStackTrace();
@@ -61,12 +63,12 @@ public final class LuckyCrates extends JavaPlugin {
     final CommanderKeen ck = new CommanderKeen(this);
     getCommand("luckycrates").setExecutor(ck);
     getCommand("luckycrates").setTabCompleter(ck);
-    getServer().getPluginManager().registerEvents(new CrateInteractListener(this), this);
-    getServer().getPluginManager().registerEvents(new CrateRemoveListener(this), this);
-    getServer().getPluginManager().registerEvents(new ChunkLoadListener(this), this);
-    getServer().getPluginManager().registerEvents(new ChunkUnloadListener(this), this);
+    new CrateInteractListener(this);
+    new CrateRemoveListener(this);
+    new ChunkLoadListener(this);
+    new ChunkUnloadListener(this);
 
-    getServer().getScheduler().runTaskTimer(this, () -> {
+    TaskUtil.sync(() -> {
       for (SpinnyCrate sc : spinnyCrates.values()) {
         if (!sc.rotate(2 * Math.PI * rpm)) {
           spinnyCrates.put(sc.getUUID(),
@@ -76,9 +78,9 @@ public final class LuckyCrates extends JavaPlugin {
                                            sc.shouldDisappear()));
         }
       }
-    }, 0, 1);
+    }, 0L, 1L);
 
-    getServer().getScheduler().runTaskTimer(this, () -> {
+    TaskUtil.sync(() -> {
       final int yamlHash = cratesDataYaml.getValues(true).hashCode();
       final long now = Instant.now().toEpochMilli();
 
@@ -100,11 +102,12 @@ public final class LuckyCrates extends JavaPlugin {
           e.printStackTrace();
         }
       }
-    }, 0, 20);
+    }, 0L, 20L);
   }
 
-  void reload() {
-    reloadConfig();
+  @Override
+  public void reloadConfig() {
+    super.reloadConfig();
     rpm = getConfig().getDouble("rpm", 45.0);
 
     SpinnyCrate.reloadCrates();
@@ -112,7 +115,7 @@ public final class LuckyCrates extends JavaPlugin {
     cratesDataYaml = YamlConfiguration.loadConfiguration(cratesDataFile);
     for (String k : cratesDataYaml.getKeys(false)) {
       final ConfigurationSection cs = cratesDataYaml.getConfigurationSection(k);
-      if (!SpinnyCrate.categorisedCrates.containsKey(cs.getString(YAML_CRATE_TYPE))) {
+      if (!SpinnyCrate.categorizedCrates.containsKey(cs.getString(YAML_CRATE_TYPE))) {
         continue;
       }
       spinnyCrates.put(UUID.fromString(k),

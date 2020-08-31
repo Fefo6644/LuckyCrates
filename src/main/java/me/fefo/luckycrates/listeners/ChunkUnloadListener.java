@@ -1,25 +1,28 @@
 package me.fefo.luckycrates.listeners;
 
+import me.fefo.facilites.SelfRegisteringListener;
 import me.fefo.luckycrates.LuckyCrates;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
-public final class ChunkUnloadListener implements Listener {
+public final class ChunkUnloadListener extends SelfRegisteringListener {
   private final LuckyCrates plugin;
 
-  public ChunkUnloadListener(LuckyCrates plugin) { this.plugin = plugin; }
+  public ChunkUnloadListener(final LuckyCrates plugin) {
+    super(plugin);
+    this.plugin = plugin;
+  }
 
   @EventHandler
-  public void onChunkUnload(ChunkUnloadEvent event) {
+  public void onChunkUnload(final ChunkUnloadEvent event) {
     if (plugin.spinnyCrates.size() == 0) {
       return;
     }
 
-    for (Entity entity : event.getChunk().getEntities()) {
-      if (!(entity instanceof ArmorStand)) {
+    for (final Entity entity : event.getChunk().getEntities()) {
+      if (entity.getType() != EntityType.ARMOR_STAND) {
         continue;
       }
 

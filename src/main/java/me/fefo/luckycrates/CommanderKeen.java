@@ -1,146 +1,236 @@
 package me.fefo.luckycrates;
 
-import org.bukkit.ChatColor;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestion;
+import com.mojang.brigadier.tree.RootCommandNode;
+import me.fefo.facilites.ColorFormat;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-public final class CommanderKeen implements CommandExecutor, TabCompleter {
+public final class CommanderKeen implements TabExecutor {
+  private final RootCommandNode<Player> rootNode = new RootCommandNode<>();
+  private final CommandDispatcher<Player> dispatcher = new CommandDispatcher<>(rootNode);
+  private final RootCommandNode<ConsoleCommandSender> consoleRootNode = new RootCommandNode<>();
+  private final CommandDispatcher<ConsoleCommandSender> consoleDispatcher = new CommandDispatcher<>(consoleRootNode);
   private final LuckyCrates plugin;
 
-  public CommanderKeen(@NotNull LuckyCrates plugin) { this.plugin = plugin; }
+  public CommanderKeen(@NotNull final LuckyCrates plugin) {
+    this.plugin = plugin;
 
-  @Override
-  public boolean onCommand(CommandSender sender,
-                           Command cmd,
-                           String alias,
-                           String[] args) {
-    if (!(sender instanceof Player)) {
-      sender.sendMessage(ChatColor.RED + "Only players can use this command");
-      return true;
-    }
+    final LiteralArgumentBuilder<Player> builder = LiteralArgumentBuilder.literal("lc");
 
-    switch (args.length) {
-      case 0: {
-        sender.sendMessage(ChatColor.DARK_AQUA + "LuckyCrates " +
-                           ChatColor.GRAY + "- " +
-                           ChatColor.AQUA + "v" + plugin.getDescription().getVersion());
-        return true;
-      }
+    builder.executes(this::printVersion)
+           .then(LiteralArgumentBuilder.<Player>literal("nearest")
+                     .executes(this::teleportNearest))
 
-      case 1: {
-        if (args[0].equalsIgnoreCase("reload")) {
-          plugin.reload();
-          sender.sendMessage(ChatColor.AQUA + "Files reloaded successfully!");
-          return true;
-        }
+           .then(LiteralArgumentBuilder.<Player>literal("reload")
+                     .executes(this::reload))
 
-        if (!args[0].equalsIgnoreCase("remove")) {
-          return false;
-        }
+           .then(LiteralArgumentBuilder.<Player>literal("remove")
+                     .executes(this::remove)
 
-        if (plugin.spinnyCrates.size() > 0) {
-          if (plugin.playersRemovingCrate.remove(((Player) sender).getUniqueId())) {
-            sender.sendMessage(ChatColor.AQUA + "Action cancelled");
-          } else {
-            plugin.playersRemovingCrate.add(((Player) sender).getUniqueId());
-            final String[] messages = new String[] {
-                ChatColor.AQUA + "Hit a crate to remove it",
-                ChatColor.AQUA + "Run the command again to cancel"
-            };
-            sender.sendMessage(messages);
-          }
-        } else {
-          sender.sendMessage(ChatColor.RED + "There are no crates to remove");
-        }
+                     .then(LiteralArgumentBuilder.<Player>literal("nearest")
+                               .executes(this::removeNearest)))
 
-        return true;
-      }
+           .then(LiteralArgumentBuilder.<Player>literal("set")
+                     .then(RequiredArgumentBuilder.<Player, String>argument("type", StringArgumentType.word())
 
-      case 2: {
-        final boolean shouldDisappear;
-        if (args[0].equalsIgnoreCase("setpersistent")) {
-          shouldDisappear = false;
-        } else if (args[0].equalsIgnoreCase("set")) {
-          shouldDisappear = true;
-        } else {
-          return false;
-        }
+                               .suggests((context, suggestionsBuilder) -> {
+                                 argsFilterer(suggestionsBuilder.getRemaining(),
+                                              SpinnyCrate.categorizedCrates.keySet(),
+                                              String::toString).forEach(suggestionsBuilder::suggest);
 
-        final Location loc = ((Player) sender).getLocation().clone();
+                                 return suggestionsBuilder.buildFuture();
+                               })
+                               .executes(this::set)))
 
-        if (SpinnyCrate.isPlaceOccupied(loc)) {
-          final String[] messages = new String[] {
-              ChatColor.RED + "This place is already occupied by another crate!",
-              ChatColor.RED + "Please, select another location"
-          };
-          sender.sendMessage(messages);
-        } else {
-          final SpinnyCrate sc = new SpinnyCrate(loc, args[1], shouldDisappear);
-          plugin.spinnyCrates.put(sc.getUUID(), sc);
-          sender.sendMessage(ChatColor.AQUA + "Crate placed successfully!");
+           .then(LiteralArgumentBuilder.<Player>literal("setpersistent")
+                     .then(RequiredArgumentBuilder.<Player, String>argument("type", StringArgumentType.word())
 
-          final ConfigurationSection cs = plugin.cratesDataYaml.createSection(sc.getUUID().toString());
-          cs.set(LuckyCrates.YAML_HIDDEN_UNTIL, 0L);
-          cs.set(LuckyCrates.YAML_SHOULD_DISAPPEAR, shouldDisappear);
-          cs.set(LuckyCrates.YAML_CRATE_TYPE, args[1]);
-          try {
-            plugin.cratesDataYaml.save(plugin.cratesDataFile);
-          } catch (IOException e) {
-            plugin.getLogger().severe("Could not save data file!");
-            e.printStackTrace();
-          }
-        }
+                               .suggests((context, suggestionsBuilder) -> {
+                                 argsFilterer(suggestionsBuilder.getRemaining(),
+                                              SpinnyCrate.categorizedCrates.keySet(),
+                                              String::toString).forEach(suggestionsBuilder::suggest);
 
-        return true;
-      }
+                                 return suggestionsBuilder.buildFuture();
+                               })
+                               .executes(this::setPersistent)));
 
-      default:
-        return false;
-    }
+    rootNode.addChild(builder.build());
+
+
+    final LiteralArgumentBuilder<ConsoleCommandSender> consoleBuilder = LiteralArgumentBuilder.literal("lc");
+
+    consoleBuilder.executes(this::printVersion)
+                  .then(LiteralArgumentBuilder.<ConsoleCommandSender>literal("reload")
+                            .executes(this::reload));
+    consoleRootNode.addChild(consoleBuilder.build());
   }
 
   @Override
-  public List<String> onTabComplete(CommandSender sender,
-                                    Command cmd,
-                                    String alias,
-                                    String[] args) {
-    final ArrayList<String> ret = new ArrayList<>();
+  public boolean onCommand(@NotNull final CommandSender sender,
+                           @NotNull final Command command,
+                           @NotNull final String label,
+                           @NotNull final String[] args) {
+    final String cmd = ("lc " + String.join(" ", args)).trim();
 
-    if (args.length == 1) {
-      if ("setpersistent".startsWith(args[0])) {
-        ret.add("setpersistent");
-      }
+    if (!(sender instanceof Player)) {
+      final ParseResults<ConsoleCommandSender> result = consoleDispatcher.parse(cmd, ((ConsoleCommandSender) sender));
 
-      if ("set".startsWith(args[0])) {
-        ret.add("set");
-      }
-
-      if ("remove".startsWith(args[0])) {
-        ret.add("remove");
+      try {
+        consoleDispatcher.execute(result);
+      } catch (CommandSyntaxException exception) {
+        sender.sendMessage(ColorFormat.format("&cConsole usages:"));
+        sender.sendMessage(ColorFormat.format("  &c/luckycrates [reload]"));
       }
 
-      if ("reload".startsWith(args[0])) {
-        ret.add("reload");
-      }
-    } else if (args.length == 2 &&
-               args[0].startsWith("set")) {
-      for (String crate : SpinnyCrate.categorisedCrates.keySet()) {
-        if (crate.startsWith(args[1])) {
-          ret.add(crate);
-        }
-      }
+      return true;
     }
 
-    return ret;
+    final ParseResults<Player> result = dispatcher.parse(cmd, ((Player) sender));
+
+    try {
+      dispatcher.execute(result);
+    } catch (CommandSyntaxException exception) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public List<String> onTabComplete(@NotNull final CommandSender sender,
+                                    @NotNull final Command command,
+                                    @NotNull final String alias,
+                                    @NotNull final String[] args) {
+    final String cmd = "lc " + String.join(" ", args);
+
+    if (sender instanceof Player) {
+      final ParseResults<Player> result = dispatcher.parse(cmd, ((Player) sender));
+
+      return dispatcher.getCompletionSuggestions(result)
+                       .join()
+                       .getList()
+                       .stream()
+                       .map(Suggestion::getText)
+                       .collect(Collectors.toList());
+    } else {
+      final ParseResults<ConsoleCommandSender> result = consoleDispatcher.parse(cmd, ((ConsoleCommandSender) sender));
+
+      return consoleDispatcher.getCompletionSuggestions(result)
+                              .join()
+                              .getList()
+                              .stream()
+                              .map(Suggestion::getText)
+                              .collect(Collectors.toList());
+    }
+  }
+
+  private <T> List<String> argsFilterer(final String cursor, final Collection<T> validValues, final Function<T, String> toString) {
+    return validValues.stream()
+                      .map(toString)
+                      .filter(s -> s.startsWith(cursor))
+                      .collect(Collectors.toList());
+  }
+
+  private int printVersion(final CommandContext<? extends CommandSender> context) {
+    context.getSource().sendMessage(ColorFormat.format("&3LuckyCrates &7- &bv"
+                                                       + plugin.getDescription().getVersion()));
+    return 0;
+  }
+
+  private int teleportNearest(final CommandContext<Player> context) {
+    final Player player = context.getSource();
+
+    return 0;
+  }
+
+  private int reload(final CommandContext<? extends CommandSender> context) {
+    plugin.reloadConfig();
+    context.getSource().sendMessage(ColorFormat.format("&bFiles reloaded successfully!"));
+    return 0;
+  }
+
+  private int remove(final CommandContext<Player> context) {
+    final Player player = context.getSource();
+
+    if (plugin.spinnyCrates.size() > 0) {
+      if (plugin.playersRemovingCrate.remove(player.getUniqueId())) {
+        player.sendMessage(ColorFormat.format("&bAction cancelled"));
+      } else {
+        plugin.playersRemovingCrate.add(player.getUniqueId());
+        player.sendMessage(ColorFormat.format("&bHit a crate to remove it"));
+        player.sendMessage(ColorFormat.format("&bRun the command again to cancel"));
+      }
+    } else {
+      player.sendMessage(ColorFormat.format("&cThere are no crates to remove"));
+    }
+    return 0;
+  }
+
+  private int removeNearest(final CommandContext<Player> context) {
+    final Player player = context.getSource();
+
+    return 0;
+  }
+
+  private int set(final CommandContext<Player> context) {
+    final Player player = context.getSource();
+    final String crateType = context.getArgument("type", String.class);
+    createCrate(player, true, crateType);
+
+    return 0;
+  }
+
+  private int setPersistent(final CommandContext<Player> context) {
+    final Player player = context.getSource();
+    final String crateType = context.getArgument("type", String.class);
+    createCrate(player, false, crateType);
+
+    return 0;
+  }
+
+  private void createCrate(final Player player, final boolean shouldDisappear, final String type) {
+    final Location loc = player.getLocation().clone();
+
+    if (SpinnyCrate.isPlaceOccupied(loc)) {
+      player.sendMessage(ColorFormat.format("&cThis place is already occupied by another crate!"));
+      player.sendMessage(ColorFormat.format("&cPlease, select another location"));
+
+    } else {
+      final SpinnyCrate sc = new SpinnyCrate(loc, type, shouldDisappear);
+      plugin.spinnyCrates.put(sc.getUUID(), sc);
+      player.sendMessage(ColorFormat.format("&bCrate placed successfully!"));
+
+      final ConfigurationSection cs = plugin.cratesDataYaml.createSection(sc.getUUID().toString());
+      cs.set(LuckyCrates.YAML_HIDDEN_UNTIL, 0L);
+      cs.set(LuckyCrates.YAML_SHOULD_DISAPPEAR, shouldDisappear);
+      cs.set(LuckyCrates.YAML_CRATE_TYPE, type);
+
+      try {
+        plugin.cratesDataYaml.save(plugin.cratesDataFile);
+      } catch (IOException e) {
+        plugin.getLogger().severe("Could not save data file!");
+        e.printStackTrace();
+      }
+    }
   }
 }

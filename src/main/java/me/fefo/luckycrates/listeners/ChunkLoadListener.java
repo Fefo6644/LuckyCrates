@@ -1,27 +1,30 @@
 package me.fefo.luckycrates.listeners;
 
+import me.fefo.facilites.SelfRegisteringListener;
 import me.fefo.luckycrates.LuckyCrates;
 import me.fefo.luckycrates.SpinnyCrate;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
 
-public final class ChunkLoadListener implements Listener {
+public final class ChunkLoadListener extends SelfRegisteringListener {
   private final LuckyCrates plugin;
 
-  public ChunkLoadListener(LuckyCrates plugin) { this.plugin = plugin; }
+  public ChunkLoadListener(final LuckyCrates plugin) {
+    super(plugin);
+    this.plugin = plugin;
+  }
 
   @EventHandler
-  public void onChunkLoad(ChunkLoadEvent event) {
+  public void onChunkLoad(final ChunkLoadEvent event) {
     if (plugin.cratesDataYaml.getKeys(false).size() == 0) {
       return;
     }
 
-    for (Entity entity : event.getChunk().getEntities()) {
-      if (!(entity instanceof ArmorStand)) {
+    for (final Entity entity : event.getChunk().getEntities()) {
+      if (entity.getType() != EntityType.ARMOR_STAND) {
         continue;
       }
 
@@ -30,9 +33,9 @@ public final class ChunkLoadListener implements Listener {
                                                                                             .toString());
         plugin.spinnyCrates.put(entity.getUniqueId(),
                                 new SpinnyCrate(cs.getString(LuckyCrates.YAML_CRATE_TYPE),
-                                              entity.getUniqueId(),
-                                              cs.getLong(LuckyCrates.YAML_HIDDEN_UNTIL),
-                                              cs.getBoolean(LuckyCrates.YAML_SHOULD_DISAPPEAR)));
+                                                entity.getUniqueId(),
+                                                cs.getLong(LuckyCrates.YAML_HIDDEN_UNTIL),
+                                                cs.getBoolean(LuckyCrates.YAML_SHOULD_DISAPPEAR)));
       }
     }
   }

@@ -6,7 +6,7 @@
 
 	<groupId>me.fefo</groupId>
 	<artifactId>luckycrates</artifactId>
-	<version>1.3.2</version>
+	<version>1.3.3</version>
 	<packaging>jar</packaging>
 
 	<name>LuckyCrates</name>
@@ -52,6 +52,16 @@
 						</goals>
 						<configuration>
 							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<relocations>
+								<relocation>
+									<pattern>me.fefo.facilites</pattern>
+									<shadedPattern>me.fefo.luckycrates.lib.facilites</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.mojang.brigadier</pattern>
+									<shadedPattern>me.fefo.luckycrates.lib.brigadier</shadedPattern>
+								</relocation>
+							</relocations>
 						</configuration>
 					</execution>
 				</executions>
@@ -63,6 +73,11 @@
 		<repository>
 			<id>papermc-repo</id>
 			<url>https://papermc.io/repo/repository/maven-public/</url>
+		</repository>
+
+		<repository>
+			<id>mojang-repo</id>
+			<url>https://libraries.minecraft.net</url>
 		</repository>
 	</repositories>
 
@@ -79,6 +94,26 @@
 			<artifactId>craftbukkit</artifactId>
 			<version>1.12.2-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>me.fefo</groupId>
+			<artifactId>facilites</artifactId>
+			<version>1.0</version>
+			<scope>compile</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>mysql</groupId>
+					<artifactId>mysql-connector-java</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>com.mojang</groupId>
+			<artifactId>brigadier</artifactId>
+			<version>1.0.17</version>
+			<scope>compile</scope>
 		</dependency>
 
 		<dependency>

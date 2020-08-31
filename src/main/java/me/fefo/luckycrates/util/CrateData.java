@@ -1,7 +1,7 @@
 package me.fefo.luckycrates.util;
 
+import me.fefo.facilites.ColorFormat;
 import me.fefo.luckycrates.util.hex.util.Skull;
-import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -61,8 +61,7 @@ public final class CrateData {
 
         if (itemYaml.containsKey("displayName")) {
           final ItemMeta itemMeta = items[i].getItemMeta();
-          itemMeta.setDisplayName(ChatColor.RESET +
-                                  ColorFormat.format((String) itemYaml.get("displayName")));
+          itemMeta.setDisplayName(ColorFormat.format("&r" + itemYaml.get("displayName")));
           items[i].setItemMeta(itemMeta);
         }
 
@@ -94,7 +93,7 @@ public final class CrateData {
         for (final Object enchantYamlUncasted : enchantsListYaml) {
           final Map<?, ?> enchantYaml = (Map<?, ?>) enchantYamlUncasted;
 
-          if (!items[i].getType().equals(Material.ENCHANTED_BOOK)) {
+          if (items[i].getType() != Material.ENCHANTED_BOOK) {
             items[i].addUnsafeEnchantment(Enchantment.getByName((String) enchantYaml.get("enchant")),
                                           (Integer) enchantYaml.get("level"));
           } else {
