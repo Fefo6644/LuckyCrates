@@ -2,7 +2,6 @@ package me.fefo.luckycrates;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestion;
@@ -28,9 +27,10 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.mojang.brigadier.arguments.StringArgumentType.word;
 import static me.fefo.facilites.BrigadierHelper.literal;
+import static me.fefo.facilites.BrigadierHelper.pArgument;
 import static me.fefo.facilites.BrigadierHelper.pLiteral;
-import static me.fefo.facilites.BrigadierHelper.pRequired;
 
 public final class CommanderKeen implements TabExecutor {
   private static final RootCommandNode<Player> ROOT_NODE = new RootCommandNode<>();
@@ -51,7 +51,7 @@ public final class CommanderKeen implements TabExecutor {
                                      .then(pLiteral("remove").executes(CommanderKeen::remove)
                                                              .then(pLiteral("nearest").executes(CommanderKeen::removeNearest)))
 
-                                     .then(pLiteral("set").then(pRequired("type", StringArgumentType.word())
+                                     .then(pLiteral("set").then(pArgument("type", word())
                                                                     .suggests((context, suggestionsBuilder) -> {
                                                                       argsFilterer(suggestionsBuilder.getRemaining(),
                                                                                    SpinnyCrate.categorizedCrates.keySet(),
@@ -61,7 +61,7 @@ public final class CommanderKeen implements TabExecutor {
                                                                     })
                                                                     .executes(CommanderKeen::set)))
 
-                                     .then(pLiteral("setpersistent").then(pRequired("type", StringArgumentType.word())
+                                     .then(pLiteral("setpersistent").then(pArgument("type", word())
                                                                               .suggests((context, suggestionsBuilder) -> {
                                                                                 argsFilterer(suggestionsBuilder.getRemaining(),
                                                                                              SpinnyCrate.categorizedCrates.keySet(),
@@ -149,25 +149,27 @@ public final class CommanderKeen implements TabExecutor {
                       .collect(Collectors.toList());
   }
 
-  private static <S extends CommandSender> int printVersion(final CommandContext<S> context) {
+  private static int printVersion(final CommandContext<? extends CommandSender> context) {
     context.getSource().sendMessage(ColorFormat.format("&3LuckyCrates &7- &bv"
                                                        + plugin.getDescription().getVersion()));
     return 0;
   }
 
-  private static <S extends CommandSender> int printUsage(final CommandContext<S> context) {
+  private static int printUsage(final CommandContext<? extends CommandSender> context) {
     printVersion(context);
 
-    final S source = context.getSource();
+    final CommandSender source = context.getSource();
 
     if (source instanceof Player) {
       source.sendMessage(ColorFormat.format("&cUsages:"));
-      source.sendMessage(ColorFormat.format("  &c/luckycrates [help|nearest|reload]"));
-      source.sendMessage(ColorFormat.format("  &c/luckycrates remove [nearest]"));
-      source.sendMessage(ColorFormat.format("  &c/luckycrates (set|setpersistent) <crate type>"));
+      for (final String usage : DISPATCHER.getAllUsage(ROOT_NODE, ((Player) source), false)) {
+        source.sendMessage(ColorFormat.format("  &c/" + usage));
+      }
     } else {
       source.sendMessage(ColorFormat.format("&cUsages:"));
-      source.sendMessage(ColorFormat.format("  &c/luckycrates [help|reload]"));
+      for (final String usage : CONSOLE_DISPATCHER.getAllUsage(CONSOLE_ROOT_NODE, source, false)) {
+        source.sendMessage(ColorFormat.format("  &c/" + usage));
+      }
     }
 
     return 0;
@@ -186,7 +188,7 @@ public final class CommanderKeen implements TabExecutor {
     return 0;
   }
 
-  private static <S extends CommandSender> int reload(final CommandContext<S> context) {
+  private static int reload(final CommandContext<? extends CommandSender> context) {
     plugin.reloadConfig();
     context.getSource().sendMessage(ColorFormat.format("&bFiles reloaded successfully!"));
     return 0;

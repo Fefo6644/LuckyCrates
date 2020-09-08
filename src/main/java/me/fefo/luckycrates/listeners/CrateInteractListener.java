@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class CrateInteractListener extends SelfRegisteringListener {
   private final LuckyCrates plugin;
@@ -93,11 +93,12 @@ public final class CrateInteractListener extends SelfRegisteringListener {
                                 item);
               }
             } else {
-              TaskUtil.sync(new Consumer<BukkitTask>() {
+              final AtomicReference<BukkitTask> task = new AtomicReference<>();
+              task.set(TaskUtil.sync(new Runnable() {
                 int index = 0;
 
                 @Override
-                public void accept(final BukkitTask task) {
+                public void run() {
                   while (true) {
                     if (index < randomLoot.items.length) {
                       if (randomLoot.items[index] == null ||
@@ -107,8 +108,7 @@ public final class CrateInteractListener extends SelfRegisteringListener {
                       }
 
                       player.getWorld()
-                            .dropItem(sc.getLocation()
-                                        .add(0, 1, 0),
+                            .dropItem(sc.getLocation().add(0, 1, 0),
                                       randomLoot.items[index++])
                             .setVelocity(new Vector());
                       player.playSound(player.getLocation(),
@@ -117,13 +117,15 @@ public final class CrateInteractListener extends SelfRegisteringListener {
                                        1.0f, 1.0f);
 
                     } else {
-                      task.cancel();
+                      if (task.get() != null) {
+                        task.get().cancel();
+                      }
                     }
 
                     return;
                   }
                 }
-              }, 0L, 20L / 3L);
+              }, 0L, 20L / 3L));
             }
           }
         }
