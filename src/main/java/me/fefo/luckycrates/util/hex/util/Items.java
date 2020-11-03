@@ -219,7 +219,7 @@ public final class Items {
     public BookBuilder addPage(String... lines) {
       StringBuilder builder = new StringBuilder();
       for (String line : lines) {
-        builder.append(Strings.format(((line == null || line.isEmpty()) ? " " : line))).append("\n");
+        builder.append(Strings.format(line == null || line.isEmpty() ? " " : line)).append("\n");
       }
       meta.addPage(builder.toString());
       return this;

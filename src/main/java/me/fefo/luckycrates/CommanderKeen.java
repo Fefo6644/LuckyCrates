@@ -2,11 +2,16 @@ package me.fefo.luckycrates;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestion;
-import com.mojang.brigadier.tree.RootCommandNode;
-import me.fefo.facilites.ColorFormat;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import me.fefo.luckycrates.internal.CratesManager;
+import me.fefo.luckycrates.internal.SpinnyCrate;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -18,95 +23,59 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
-import static me.fefo.facilites.BrigadierHelper.literal;
-import static me.fefo.facilites.BrigadierHelper.pArgument;
-import static me.fefo.facilites.BrigadierHelper.pLiteral;
+import static me.fefo.facilites.VariousUtils.filterArg;
 
-public final class CommanderKeen implements TabExecutor {
-  private static final RootCommandNode<Player> ROOT_NODE = new RootCommandNode<>();
-  private static final CommandDispatcher<Player> DISPATCHER = new CommandDispatcher<>(ROOT_NODE);
-  private static final RootCommandNode<CommandSender> CONSOLE_ROOT_NODE = new RootCommandNode<>();
-  private static final CommandDispatcher<CommandSender> CONSOLE_DISPATCHER = new CommandDispatcher<>(CONSOLE_ROOT_NODE);
+public final class CommanderKeen<S extends Player> implements TabExecutor {
 
-  private static final Map<String, ParseResults<Player>> RESULTS_CACHE = new HashMap<>();
-  private static final Map<String, ParseResults<CommandSender>> CONSOLE_RESULTS_CACHE = new HashMap<>();
-
-  private static LuckyCrates plugin;
-
-  static {
-    ROOT_NODE.addChild(pLiteral("lc").executes(CommanderKeen::printVersion)
-                                     .then(pLiteral("help").executes(CommanderKeen::printUsage))
-                                     .then(pLiteral("nearest").executes(CommanderKeen::teleportNearest))
-                                     .then(pLiteral("reload").executes(CommanderKeen::reload))
-                                     .then(pLiteral("remove").executes(CommanderKeen::remove)
-                                                             .then(pLiteral("nearest").executes(CommanderKeen::removeNearest)))
-
-                                     .then(pLiteral("set").then(pArgument("type", word())
-                                                                    .suggests((context, suggestionsBuilder) -> {
-                                                                      argsFilterer(suggestionsBuilder.getRemaining(),
-                                                                                   SpinnyCrate.categorizedCrates.keySet(),
-                                                                                   String::toString).forEach(suggestionsBuilder::suggest);
-
-                                                                      return suggestionsBuilder.buildFuture();
-                                                                    })
-                                                                    .executes(CommanderKeen::set)))
-
-                                     .then(pLiteral("setpersistent").then(pArgument("type", word())
-                                                                              .suggests((context, suggestionsBuilder) -> {
-                                                                                argsFilterer(suggestionsBuilder.getRemaining(),
-                                                                                             SpinnyCrate.categorizedCrates.keySet(),
-                                                                                             String::toString).forEach(suggestionsBuilder::suggest);
-
-                                                                                return suggestionsBuilder.buildFuture();
-                                                                              })
-                                                                              .executes(CommanderKeen::setPersistent)))
-                                     .build());
-
-    CONSOLE_ROOT_NODE.addChild(literal("lc").executes(CommanderKeen::printVersion)
-                                            .then(literal("help").executes(CommanderKeen::printUsage))
-                                            .then(literal("reload").executes(CommanderKeen::reload))
-                                            .build());
+  private LiteralArgumentBuilder<S> literal(final String name) {
+    return LiteralArgumentBuilder.literal(name);
   }
 
-  public CommanderKeen(@NotNull final LuckyCrates plugin) {
-    CommanderKeen.plugin = plugin;
+  private <T> RequiredArgumentBuilder<S, T> argument(final String name, final ArgumentType<T> type) {
+    return RequiredArgumentBuilder.argument(name, type);
+  }
+
+  private final LuckyCrates plugin;
+  private final CratesManager manager;
+  private final Function<CommandSender, S> transformer;
+  private final CommandDispatcher<S> dispatcher = new CommandDispatcher<>();
+
+  public CommanderKeen(final LuckyCrates plugin, final Function<CommandSender, S> transformer) {
+    this.plugin = plugin;
+    this.manager = plugin.getCratesManager();
+    this.transformer = transformer;
+
+    dispatcher.register(literal("lc").executes(this::printVersion)
+                                     .then(literal("help").executes(this::printUsage))
+                                     .then(literal("nearest").executes(this::teleportNearest))
+                                     .then(literal("reload").executes(this::reload))
+                                     .then(literal("remove").executes(this::remove)
+                                                            .then(literal("nearest").executes(this::removeNearest)))
+                                     .then(literal("set").then(argument("type", word()).suggests(this::suggestCrateType).executes(this::set)))
+                                     .then(literal("setpersistent").then(argument("type", word()).suggests(this::suggestCrateType).executes(this::setPersistent))));
   }
 
   @Override
-  public boolean onCommand(@NotNull final CommandSender sender,
-                           @NotNull final Command command,
-                           @NotNull final String label,
-                           @NotNull final String[] args) {
-    final String cmd = ("lc " + String.join(" ", args)).trim();
-
+  public boolean onCommand(@NotNull final CommandSender sender, @NotNull final Command command, @NotNull final String label, @NotNull final String[] args) {
     if (!(sender instanceof Player)) {
-      final ParseResults<CommandSender> result = CONSOLE_RESULTS_CACHE.getOrDefault(cmd, CONSOLE_DISPATCHER.parse(cmd, sender));
-
-      try {
-        CONSOLE_DISPATCHER.execute(result);
-        CONSOLE_RESULTS_CACHE.putIfAbsent(cmd, result);
-      } catch (CommandSyntaxException exception) {
-        printUsage(result.getContext().build(cmd));
-      }
-
+      Message.PLAYERS_ONLY.send(sender);
       return true;
     }
 
-    final ParseResults<Player> result = RESULTS_CACHE.getOrDefault(cmd, DISPATCHER.parse(cmd, ((Player) sender)));
+    final String cmd = "lc " + String.join(" ", args);
+    final ParseResults<S> result = dispatcher.parse(cmd.trim(), transformer.apply(sender));
 
     try {
-      DISPATCHER.execute(result);
-      RESULTS_CACHE.putIfAbsent(cmd, result);
+      dispatcher.execute(result);
     } catch (CommandSyntaxException exception) {
       printUsage(result.getContext().build(cmd));
     }
@@ -115,105 +84,81 @@ public final class CommanderKeen implements TabExecutor {
   }
 
   @Override
-  public List<String> onTabComplete(@NotNull final CommandSender sender,
-                                    @NotNull final Command command,
-                                    @NotNull final String alias,
-                                    @NotNull final String[] args) {
+  public List<String> onTabComplete(@NotNull final CommandSender sender, @NotNull final Command command, @NotNull final String alias, @NotNull final String[] args) {
+    if (!(sender instanceof Player)) {
+      return Collections.emptyList();
+    }
+
     final String cmd = "lc " + String.join(" ", args);
+    final ParseResults<S> result = dispatcher.parse(cmd, transformer.apply(sender));
 
-    if (sender instanceof Player) {
-      final ParseResults<Player> result = RESULTS_CACHE.getOrDefault(cmd, DISPATCHER.parse(cmd, ((Player) sender)));
-
-      return DISPATCHER.getCompletionSuggestions(result)
-                       .join()
-                       .getList()
-                       .stream()
-                       .map(Suggestion::getText)
-                       .collect(Collectors.toList());
-    } else {
-      final ParseResults<CommandSender> result = CONSOLE_RESULTS_CACHE.getOrDefault(cmd, CONSOLE_DISPATCHER.parse(cmd, sender));
-
-      return CONSOLE_DISPATCHER.getCompletionSuggestions(result)
-                               .join()
-                               .getList()
-                               .stream()
-                               .map(Suggestion::getText)
-                               .collect(Collectors.toList());
-    }
+    return dispatcher.getCompletionSuggestions(result).join()
+                     .getList().stream()
+                     .map(Suggestion::getText)
+                     .collect(Collectors.toList());
   }
 
-  private static <T> List<String> argsFilterer(final String cursor, final Collection<T> validValues, final Function<T, String> toString) {
-    return validValues.stream()
-                      .map(toString)
-                      .filter(s -> s.startsWith(cursor))
-                      .collect(Collectors.toList());
+  private CompletableFuture<Suggestions> suggestCrateType(final CommandContext<S> context, final SuggestionsBuilder builder) {
+    filterArg(builder.getRemaining(), manager.categorizedCrates.keySet(), String::toString).forEach(builder::suggest);
+    return builder.buildFuture();
   }
 
-  private static int printVersion(final CommandContext<? extends CommandSender> context) {
-    context.getSource().sendMessage(ColorFormat.format("&3LuckyCrates &7- &bv"
-                                                       + plugin.getDescription().getVersion()));
+  private int printVersion(final CommandContext<S> context) {
+    Message.VERSION.send(context.getSource(), plugin.getDescription().getVersion());
     return 0;
   }
 
-  private static int printUsage(final CommandContext<? extends CommandSender> context) {
+  private int printUsage(final CommandContext<S> context) {
     printVersion(context);
+    final S source = context.getSource();
 
-    final CommandSender source = context.getSource();
-
-    if (source instanceof Player) {
-      source.sendMessage(ColorFormat.format("&cUsages:"));
-      for (final String usage : DISPATCHER.getAllUsage(ROOT_NODE, ((Player) source), false)) {
-        source.sendMessage(ColorFormat.format("  &c/" + usage));
-      }
-    } else {
-      source.sendMessage(ColorFormat.format("&cUsages:"));
-      for (final String usage : CONSOLE_DISPATCHER.getAllUsage(CONSOLE_ROOT_NODE, source, false)) {
-        source.sendMessage(ColorFormat.format("  &c/" + usage));
-      }
+    Message.USAGE_TITLE.send(source);
+    for (final String usage : dispatcher.getAllUsage(dispatcher.getRoot(), source, true)) {
+      Message.USAGE_COMMAND.send(source, usage);
     }
 
     return 0;
   }
 
-  private static int teleportNearest(final CommandContext<Player> context) {
-    final Player player = context.getSource();
-    final UUID nearestCrate = getNearestCrate(player);
+  private int teleportNearest(final CommandContext<S> context) {
+    final S source = context.getSource();
+    final UUID nearestCrate = getNearestCrate(source);
 
     if (nearestCrate != null) {
-      player.teleport(plugin.spinnyCrates.get(nearestCrate).getLocation());
+      source.teleport(plugin.spinnyCrates.get(nearestCrate).getLocation());
     } else {
-      player.sendMessage(ColorFormat.format("&cCouldn't find the nearest crate within loaded chunks in this world"));
+      Message.COULDNT_FIND_NEAREST.send(source);
     }
 
     return 0;
   }
 
-  private static int reload(final CommandContext<? extends CommandSender> context) {
+  private int reload(final CommandContext<S> context) {
     plugin.reloadConfig();
-    context.getSource().sendMessage(ColorFormat.format("&bFiles reloaded successfully!"));
+    Message.FILES_RELOADED.send(context.getSource());
     return 0;
   }
 
-  private static int remove(final CommandContext<Player> context) {
-    final Player player = context.getSource();
+  private int remove(final CommandContext<S> context) {
+    final S source = context.getSource();
 
-    if (plugin.spinnyCrates.size() > 0) {
-      if (plugin.playersRemovingCrate.remove(player.getUniqueId())) {
-        player.sendMessage(ColorFormat.format("&bAction cancelled"));
+    if (!plugin.spinnyCrates.isEmpty()) {
+      if (plugin.playersRemovingCrate.remove(source.getUniqueId())) {
+        Message.ACTION_CANCELLED.send(source);
       } else {
-        plugin.playersRemovingCrate.add(player.getUniqueId());
-        player.sendMessage(ColorFormat.format("&bHit a crate to remove it"));
-        player.sendMessage(ColorFormat.format("&bRun the command again to cancel"));
+        plugin.playersRemovingCrate.add(source.getUniqueId());
+        Message.HIT_TO_REMOVE.send(source);
+        Message.RUN_TO_CANCEL.send(source);
       }
     } else {
-      player.sendMessage(ColorFormat.format("&cThere are no crates to remove"));
+      Message.NO_LOADED_CRATES.send(source);
     }
     return 0;
   }
 
-  private static int removeNearest(final CommandContext<Player> context) {
-    final Player player = context.getSource();
-    final UUID nearestCrate = getNearestCrate(player);
+  private int removeNearest(final CommandContext<S> context) {
+    final S source = context.getSource();
+    final UUID nearestCrate = getNearestCrate(source);
 
     if (nearestCrate != null) {
       final String type = plugin.spinnyCrates.get(nearestCrate).getCrateName();
@@ -233,43 +178,41 @@ public final class CommanderKeen implements TabExecutor {
         ex.printStackTrace();
       }
 
-      player.sendMessage(ColorFormat.format("&9" + type + " &bcrate removed at " +
-                                            "&7x:" + x + " y:" + y + " z:" + z));
-
+      Message.CRATE_REMOVED_AT.send(source, type, String.valueOf(x), String.valueOf(y), String.valueOf(z));
     } else {
-      player.sendMessage(ColorFormat.format("&cCouldn't find the nearest crate within loaded chunks in this world"));
+      Message.COULDNT_FIND_NEAREST.send(source);
     }
 
     return 0;
   }
 
-  private static int set(final CommandContext<Player> context) {
-    final Player player = context.getSource();
+  private int set(final CommandContext<S> context) {
+    final S source = context.getSource();
     final String crateType = context.getArgument("type", String.class);
-    createCrate(player, true, crateType);
+    createCrate(source, true, crateType);
 
     return 0;
   }
 
-  private static int setPersistent(final CommandContext<Player> context) {
-    final Player player = context.getSource();
+  private int setPersistent(final CommandContext<S> context) {
+    final S source = context.getSource();
     final String crateType = context.getArgument("type", String.class);
-    createCrate(player, false, crateType);
+    createCrate(source, false, crateType);
 
     return 0;
   }
 
-  private static void createCrate(final Player player, final boolean shouldDisappear, final String type) {
+  private void createCrate(final Player player, final boolean shouldDisappear, final String type) {
     final Location loc = player.getLocation().clone();
 
-    if (SpinnyCrate.isPlaceOccupied(loc)) {
-      player.sendMessage(ColorFormat.format("&cThis place is already occupied by another crate!"));
-      player.sendMessage(ColorFormat.format("&cPlease, select another location"));
+    if (manager.isPlaceOccupied(loc)) {
+      Message.ALREADY_OCCUPIED.send(player);
+      Message.SELECT_ANOTHER_LOCATION.send(player);
 
     } else {
-      final SpinnyCrate sc = new SpinnyCrate(loc, type, shouldDisappear);
+      final SpinnyCrate sc = new SpinnyCrate(manager, loc, type, shouldDisappear);
       plugin.spinnyCrates.put(sc.getUUID(), sc);
-      player.sendMessage(ColorFormat.format("&bCrate placed successfully!"));
+      Message.CRATE_PLACED.send(player, type);
 
       final ConfigurationSection cs = plugin.cratesDataYaml.createSection(sc.getUUID().toString());
       cs.set(LuckyCrates.YAML_HIDDEN_UNTIL, 0L);
@@ -285,7 +228,7 @@ public final class CommanderKeen implements TabExecutor {
     }
   }
 
-  private static UUID getNearestCrate(final Player player) {
+  private UUID getNearestCrate(final Player player) {
     return player.getWorld()
                  .getEntitiesByClass(ArmorStand.class)
                  .stream()
@@ -295,11 +238,6 @@ public final class CommanderKeen implements TabExecutor {
                  .min(new CratesSorter(player))
                  .map(SpinnyCrate::getUUID)
                  .orElse(null);
-  }
-
-  public static void clearCaches() {
-    RESULTS_CACHE.clear();
-    CONSOLE_RESULTS_CACHE.clear();
   }
 
   private static final class CratesSorter implements Comparator<SpinnyCrate> {

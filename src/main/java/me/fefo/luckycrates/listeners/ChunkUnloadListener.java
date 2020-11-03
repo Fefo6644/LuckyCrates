@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
 public final class ChunkUnloadListener extends SelfRegisteringListener {
+
   private final LuckyCrates plugin;
 
   public ChunkUnloadListener(final LuckyCrates plugin) {
@@ -17,16 +18,14 @@ public final class ChunkUnloadListener extends SelfRegisteringListener {
 
   @EventHandler
   public void onChunkUnload(final ChunkUnloadEvent event) {
-    if (plugin.spinnyCrates.size() == 0) {
+    if (plugin.spinnyCrates.isEmpty()) {
       return;
     }
 
     for (final Entity entity : event.getChunk().getEntities()) {
-      if (entity.getType() != EntityType.ARMOR_STAND) {
-        continue;
+      if (entity.getType() == EntityType.ARMOR_STAND) {
+        plugin.spinnyCrates.remove(entity.getUniqueId());
       }
-
-      plugin.spinnyCrates.remove(entity.getUniqueId());
     }
   }
 }

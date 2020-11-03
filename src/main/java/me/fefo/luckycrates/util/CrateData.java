@@ -1,6 +1,6 @@
 package me.fefo.luckycrates.util;
 
-import me.fefo.facilites.ColorFormat;
+import me.fefo.facilites.VariousUtils;
 import me.fefo.luckycrates.util.hex.util.Skull;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -21,30 +21,28 @@ import java.util.Map;
 import java.util.Random;
 
 public final class CrateData {
-  private final @NotNull String name;
-  private final @NotNull ItemStack customSkull;
-  private final @NotNull Random rng = new Random();
+
+  private final String name;
+  private final ItemStack customSkull;
+  private final Random rng = new Random();
   private final int lowerBound;
   private final int upperBound;
-  private final @Nullable String permRequired;
-  private final @NotNull ArrayList<Loot> lootTable = new ArrayList<>();
+  private final String permRequired;
+  private final ArrayList<Loot> lootTable = new ArrayList<>();
 
-  public CrateData(final @NotNull String crateName,
-                   final @NotNull YamlConfiguration crateYaml)
-      throws AssertionError {
+  @SuppressWarnings({ "ConstantConditions", "unchecked" })
+  public CrateData(final String crateName, final YamlConfiguration crateYaml) throws AssertionError {
 
     lowerBound = 1000 * crateYaml.getIntegerList("secondsUntilReappearance").get(0);
     upperBound = 1000 * crateYaml.getIntegerList("secondsUntilReappearance").get(1);
-    // compilers are stupid
-    //noinspection ConstantConditions
     if (lowerBound <= 0 || lowerBound > upperBound) {
       throw new AssertionError("lowerBound must be greater than zero - " +
                                "lowerBound must be less than or equal to upperBound");
     }
 
-    List<Map<?, ?>> rewardsListYaml = crateYaml.getMapList("rewards");
+    final List<Map<?, ?>> rewardsListYaml = crateYaml.getMapList("rewards");
     for (final Map<?, ?> rewardYaml : rewardsListYaml) {
-      if (((Integer) rewardYaml.get("rarity")) <= 0) {
+      if ((Integer) rewardYaml.get("rarity") <= 0) {
         throw new AssertionError("All rarities must be greater than zero");
       }
     }
@@ -52,16 +50,15 @@ public final class CrateData {
     for (final Map<?, ?> rewardYaml : rewardsListYaml) {
       final ItemStack[] items = new ItemStack[((List<?>) rewardYaml.get("items")).size()];
 
-      List<?> itemsListYaml = (List<?>) rewardYaml.get("items");
+      final List<?> itemsListYaml = (List<?>) rewardYaml.get("items");
       for (int i = 0; i < itemsListYaml.size(); ++i) {
-        final Map<?, ?> itemYaml = ((Map<?, ?>) itemsListYaml.get(i));
+        final Map<?, ?> itemYaml = (Map<?, ?>) itemsListYaml.get(i);
 
-        items[i] = new ItemStack(Material.getMaterial((String) itemYaml.get("item")),
-                                 ((Integer) itemYaml.get("amount")));
+        items[i] = new ItemStack(Material.getMaterial((String) itemYaml.get("item")), (Integer) itemYaml.get("amount"));
 
         if (itemYaml.containsKey("displayName")) {
           final ItemMeta itemMeta = items[i].getItemMeta();
-          itemMeta.setDisplayName(ColorFormat.format("&r" + itemYaml.get("displayName")));
+          itemMeta.setDisplayName(VariousUtils.format("&f" + itemYaml.get("displayName")));
           items[i].setItemMeta(itemMeta);
         }
 
@@ -70,7 +67,7 @@ public final class CrateData {
         }
 
         if (((String) itemYaml.get("item")).contains("POTION")) {
-          final PotionMeta potionMeta = ((PotionMeta) items[i].getItemMeta());
+          final PotionMeta potionMeta = (PotionMeta) items[i].getItemMeta();
           final PotionEffect potionEffect = new PotionEffect(PotionEffectType.getByName((String) itemYaml.get("potionEffectType")),
                                                              (Integer) itemYaml.get("potionDurationSeconds") * 20,
                                                              (Integer) itemYaml.get("potionEffectAmplifier"),
@@ -82,7 +79,7 @@ public final class CrateData {
         }
 
         final ItemMeta itemMeta = items[i].getItemMeta();
-        itemMeta.setUnbreakable(((Boolean) itemYaml.get("unbreakable")));
+        itemMeta.setUnbreakable((Boolean) itemYaml.get("unbreakable"));
 
         if (!(itemYaml.get("enchants") instanceof List)) {
           items[i].setItemMeta(itemMeta);
@@ -97,26 +94,20 @@ public final class CrateData {
             items[i].addUnsafeEnchantment(Enchantment.getByName((String) enchantYaml.get("enchant")),
                                           (Integer) enchantYaml.get("level"));
           } else {
-            ((EnchantmentStorageMeta) itemMeta)
-                .addStoredEnchant(Enchantment.getByName((String) enchantYaml.get("enchant")),
-                                  (Integer) enchantYaml.get("level"),
-                                  true);
+            ((EnchantmentStorageMeta) itemMeta).addStoredEnchant(Enchantment.getByName((String) enchantYaml.get("enchant")),
+                                                                 (Integer) enchantYaml.get("level"), true);
             items[i].setItemMeta(itemMeta);
           }
         }
       }
 
-      List<String> commandsList = new ArrayList<>();
+      final List<String> commandsList = new ArrayList<>();
 
       if (rewardYaml.containsKey("commands")) {
-        // sucks ass
-        //noinspection unchecked
-        commandsList.addAll(((List<String>) rewardYaml.get("commands")));
+        commandsList.addAll((List<String>) rewardYaml.get("commands"));
       }
 
-      lootTable.add(new Loot((Integer) rewardYaml.get("rarity"),
-                             commandsList.toArray(new String[0]),
-                             items));
+      lootTable.add(new Loot((Integer) rewardYaml.get("rarity"), commandsList.toArray(new String[0]), items));
     }
     lootTable.sort((l1, l2) -> l2.rarity - l1.rarity);
 
@@ -126,23 +117,38 @@ public final class CrateData {
     customSkull = Skull.getCustomSkull("http://textures.minecraft.net/texture/" + crateYaml.getString("texture"));
   }
 
-  public @NotNull String getName() { return name; }
-  public @NotNull ItemStack getSkull() { return customSkull; }
-  public int getRandomTime() { return rng.nextInt(1 + upperBound - lowerBound) + lowerBound; }
-  public boolean requiresPerm() { return permRequired != null; }
-  public @Nullable String getPermRequired() { return permRequired; }
+  public @NotNull String getName() {
+    return name;
+  }
+
+  public @NotNull ItemStack getSkull() {
+    return customSkull;
+  }
+
+  public int getRandomTime() {
+    return rng.nextInt(1 + upperBound - lowerBound) + lowerBound;
+  }
+
+  public boolean requiresPerm() {
+    return permRequired != null;
+  }
+
+  public @Nullable String getPermRequired() {
+    return permRequired;
+  }
 
   public Loot getRandomLoot() {
     int totalWeight = 0;
-    for (Loot loot : lootTable) {
+    for (final Loot loot : lootTable) {
       totalWeight += loot.rarity;
     }
     int randomPick = (int) (rng.nextDouble() * totalWeight);
 
-    for (Loot loot : lootTable) {
+    for (final Loot loot : lootTable) {
       if (randomPick < loot.rarity) {
         return loot;
       }
+
       randomPick -= loot.rarity;
     }
 
