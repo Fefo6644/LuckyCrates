@@ -1,0 +1,34 @@
+{
+  "requiresPermission": false,
+  "texture": "ee2aae8882da501fefd61970b61d5363c83cb8d52f97e4aea76f9b2d66165ab",
+  "secondsHidden": {
+    "min": 30,
+    "max": 60
+  },
+  "rewards": [
+    {
+      "weight": 9,
+      "items": [
+        {
+          "type": "SPLASH_POTION",
+          "displayName": "Potion of Absorption",
+          "amount": 1,
+          "potionEffect": {
+            "type": "ABSORPTION",
+            "durationSeconds": 60,
+            "amplifier": 0
+          }
+        }
+      ]
+    },
+    {
+      "weight": 1,
+      "items": [
+        {
+          "type": "GOLDEN_APPLE",
+          "amount": 1
+        }
+      ]
+    }
+  ]
+}

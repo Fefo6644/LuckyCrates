@@ -1,0 +1,37 @@
+{
+  "requiresPermission": false,
+  "texture": "e4cebb39f7a57d60c6c54f20273ec2fb5d86caa0a76bba9549291d27d1edb6eb",
+  "secondsHidden": {
+    "min": 30,
+    "max": 60
+  },
+  "rewards": [
+    {
+      "weight": 5,
+      "items": [
+        {
+          "type": "APPLE",
+          "amount": 5
+        },
+        {
+          "type": "ARROW",
+          "amount": 16
+        },
+        {
+          "type": "BOW",
+          "amount": 1,
+          "enchantments": [
+            {
+              "type": "DURABILITY",
+              "level": 2
+            },
+            {
+              "type": "ARROW_DAMAGE",
+              "level": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

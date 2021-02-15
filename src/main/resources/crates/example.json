@@ -1,0 +1,132 @@
+// I HIGHLY suggest that, when finishing setting up the crates, you parse the file through a JSON validator.
+// It can get really messy really fast.
+// I suggest this one https://onlinejsontools.com/validate-json
+
+// Let me reiterate:
+// I HIGHLY SUGGEST that, when finishing setting up the crates, you parse the file through a JSON validator.
+// It can get really messy really fast.
+// I suggest this one https://onlinejsontools.com/validate-json
+
+// This is an example/template for you to base your own crates, with loots and weights and all that.
+// Looks much cleaner without the comments, though; take a look at any of the other files.
+// This one example file will be ignored, so there's no point on modifying it.
+
+{
+  // The permission node required for a player to use crates of this type.
+  // It can be either the permission node or simply "false" if everyone should be able to use it.
+  "requiresPermission": "permission.node",
+
+  // In the texture field you put where it says "Minecraft-URL" at the very bottom of the custom heads page.
+  // This is the one used for the common crate:
+  // https://minecraft-heads.com/custom-heads/alphabet/12369-lucky-block-green
+  "texture": "e4cebb39f7a57d60c6c54f20273ec2fb5d86caa0a76bba9549291d27d1edb6eb",
+
+  // Time until reappearance will be selected at random between these boundaries (included).
+  // min has to be less than or equal to max.
+  "secondsHidden": {
+    "min": 0,
+    "max": 0
+  },
+
+  // This is going to be the loot table section.
+  "rewards": [
+    {
+      // the higher the weight, the higher the chance of this loot/reward to be chosen at random
+      "weight": 50,
+
+      // ALL commands will run as console.
+      "commands": [
+        "ban madolebr",
+        "give %player% cookie 1"
+      ],
+
+      "items": [
+        {
+          // Get the item names from https://papermc.io/javadocs/paper/1.12/org/bukkit/Material.html
+          // Take into account that (since pre-1.13 is shit regarding block states and all that),
+          // BIRCH_DOOR is the block, and BIRCH_DOOR_ITEM is the actual item that goes into the inventory.
+          // Same goes for most crops, I believe.
+          // If you want something and don't find it in that list, Google is your best friend.
+          "type": "APPLE",
+          "amount": 5
+        },
+        {
+          "type": "ARROW",
+          "amount": 16
+        },
+        {
+          "type": "GOLDEN_APPLE",
+          "amount": 1,
+          // Data if any, pre-1.13 F3+H --> item #id/data. Can be omitted.
+          "data": 1
+        },
+        {
+          "type": "BOW",
+          "amount": 1,
+          // https://papermc.io/javadocs/paper/1.12/org/bukkit/enchantments/Enchantment.html
+          "enchantments": [
+            {
+              "type": "DURABILITY",
+              "level": 2
+            },
+            {
+              "type": "ARROW_DAMAGE",
+              "level": 1
+            }
+          ]
+        },
+        {
+          "type": "SPLASH_POTION",
+          // You can ignore displayName and it'll just leave it default,
+          // but for potions, default is "Uncraftable potion" so I suggest you include them there.
+          "displayName": "Potion of Absorption",
+          "amount": 1,
+          // This field is only for potion items (POTION, SPLASH_POTION and LINGERING_POTION)
+          // https://papermc.io/javadocs/paper/1.12/org/bukkit/potion/PotionEffectType.html
+          "potionEffect": {
+            "type": "ABSORPTION",
+            "durationSeconds": 60,
+            // Aplifier 0 is unamplified ("level 1 potion"), 1 is "level 2 potion", etc.
+            "amplifier": 0
+          }
+        }
+      ]
+    },
+    {
+      "weight": 25,
+      "items": [
+        {
+          "type": "type",
+          "amount": 64,
+          // For if you want the item to not lose any durability at all.
+          "unbreakable": true,
+          "enchantments": [
+            {
+              "type": "type",
+              "level": 1
+            }
+          ]
+        },
+        {
+          "type": "type",
+          "amount": 20,
+          "enchantments": [
+            {
+              "type": "type",
+              "level": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 10,
+      "items": [
+        {
+          "type": "type",
+          "amount": 10
+        }
+      ]
+    }
+  ]
+}

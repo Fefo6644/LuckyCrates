@@ -1,5 +1,5 @@
 # Project exclude paths
-/target/
-/copy.bat
 /.idea/
-/out/
+/.gradle/
+/gradle/wrapper/gradle-wrapper.jar
+/build/
