@@ -10,6 +10,7 @@ This plugin allows you to create fully customizable rotating custom-textured cus
 * Randomized loot
 * Loot weights/rarity
 * More???
+
 Each crate type file has its own structure to is, you can check out a detailed commented example here https://raw.githubusercontent.com/Fefo6644/LuckyCrates/master/src/main/resources/crates/example.json
 
 ___
