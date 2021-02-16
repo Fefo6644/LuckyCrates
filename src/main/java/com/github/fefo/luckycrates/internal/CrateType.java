@@ -26,15 +26,12 @@ package com.github.fefo.luckycrates.internal;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import com.github.fefo.luckycrates.LuckyCratesPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -47,30 +44,6 @@ public final class CrateType {
 
   private static final SplittableRandom RANDOM = new SplittableRandom();
   private static final Base64.Encoder ENCODER = Base64.getEncoder();
-
-  static {
-    try {
-      // Workaround to not trigger 'Illegal reflective access' warning
-      final Class<?> moduleClass = Class.forName("java.lang.Module");
-      final Method getModuleMethod = Class.class.getMethod("getModule");
-      final Method addOpensMethod = moduleClass.getMethod("addOpens", String.class, moduleClass);
-
-      final Object splittableRandomModule = getModuleMethod.invoke(SplittableRandom.class);
-      final Object crateDataModule = getModuleMethod.invoke(CrateType.class);
-
-      addOpensMethod.invoke(splittableRandomModule, SplittableRandom.class.getPackage().getName(), crateDataModule);
-    } catch (final Throwable exception) {
-      // Means we are on Java 8 or below, nothing to worry about
-    }
-
-    try {
-      final Field seedField = SplittableRandom.class.getDeclaredField("seed");
-      seedField.setAccessible(true);
-      LuckyCratesPlugin.LOGGER.info(String.format("CrateData random seed: %d", seedField.getLong(RANDOM)));
-    } catch (final ReflectiveOperationException exception) {
-      // ¯\_(ツ)_/¯
-    }
-  }
 
   private static ItemStack getCustomSkull(final String url) {
     final PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
