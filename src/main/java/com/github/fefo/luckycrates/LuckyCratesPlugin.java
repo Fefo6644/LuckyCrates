@@ -105,7 +105,7 @@ public final class LuckyCratesPlugin extends JavaPlugin {
       throw new RuntimeException(exception);
     }
 
-    new CommandHandler(this);
+    new LuckyCratesCommand(this);
     Bukkit.getPluginManager().registerEvents(new CrateInteractListener(this), this);
     Bukkit.getPluginManager().registerEvents(new CrateRemoveListener(this), this);
     Bukkit.getPluginManager().registerEvents(new ChunkLoadListener(this), this);

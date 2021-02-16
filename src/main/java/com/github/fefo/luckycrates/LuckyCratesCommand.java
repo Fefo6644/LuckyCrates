@@ -66,7 +66,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public final class CommandHandler extends Command implements Listener {
+public final class LuckyCratesCommand extends Command implements Listener {
 
   private static final Joiner OR_JOINER = Joiner.on('|');
 
@@ -77,7 +77,7 @@ public final class CommandHandler extends Command implements Listener {
   private final CommandDispatcher<PlayerMessagingSubject> dispatcher = new CommandDispatcher<>();
   private final RootCommandNode<PlayerMessagingSubject> root = this.dispatcher.getRoot();
 
-  public CommandHandler(final LuckyCratesPlugin plugin) {
+  public LuckyCratesCommand(final LuckyCratesPlugin plugin) {
     super("luckycrates", "Command used to place, locate and remove spinning crates", "/luckycrates help", ImmutableList.of("lc"));
     this.plugin = plugin;
     this.cratesMap = plugin.getCratesMap();
