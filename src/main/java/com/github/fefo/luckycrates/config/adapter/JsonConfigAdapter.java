@@ -61,7 +61,8 @@ public final class JsonConfigAdapter extends ConfigAdapter {
         final String message = String.format("There was an error reading %s, making backup and generating an empty JSON file. "
                                              + "Please send the faulty file to the plugin author!",
                                              this.configPath.toString());
-        this.plugin.getSLF4JLogger().warn(message, exception);
+        this.plugin.getLogger().warning(message);
+        exception.printStackTrace();
 
         final String backup = String.format("config.%s.err.json", DATE_TIME_FORMATTER.format(Instant.now()));
         Files.move(this.configPath, this.configPath.resolveSibling(backup));

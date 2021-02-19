@@ -38,8 +38,6 @@ import com.github.fefo.luckycrates.messages.SubjectFactory;
 import com.github.fefo.luckycrates.util.TaskScheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +48,6 @@ import java.util.regex.Pattern;
 
 public final class LuckyCratesPlugin extends JavaPlugin {
 
-  public static final Logger LOGGER = LoggerFactory.getLogger(LuckyCratesPlugin.class);
   private static final Pattern PATH_SEPARATOR = Pattern.compile("/");
 
   private final Path dataFolder = getDataFolder().toPath();
@@ -89,7 +86,7 @@ public final class LuckyCratesPlugin extends JavaPlugin {
     try {
       this.configAdapter.load();
     } catch (final IOException exception) {
-      LOGGER.error("Could not create/load config!");
+      getLogger().severe("Could not create/load config!");
       throw new RuntimeException(exception);
     }
   }
@@ -101,7 +98,7 @@ public final class LuckyCratesPlugin extends JavaPlugin {
     try {
       this.cratesMap.load();
     } catch (final Exception exception) {
-      LOGGER.error("Could not create/load crates data!");
+      getLogger().severe("Could not create/load crates data!");
       throw new RuntimeException(exception);
     }
 
@@ -139,14 +136,10 @@ public final class LuckyCratesPlugin extends JavaPlugin {
       this.cratesMap.reload();
       return true;
     } catch (final IOException exception) {
-      LOGGER.error("There was an error while reloading files", exception);
+      getLogger().severe("There was an error while reloading files");
+      exception.printStackTrace();
       return false;
     }
-  }
-
-  @Override
-  public Logger getSLF4JLogger() {
-    return LOGGER;
   }
 
   public void saveResource(final String resource, final Path folder, final boolean overwrite) throws IOException {

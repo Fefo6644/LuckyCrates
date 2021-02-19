@@ -104,7 +104,8 @@ public final class CrateInteractListener implements Listener {
       try {
         this.plugin.getCratesMap().save();
       } catch (final IOException exception) {
-        this.plugin.getSLF4JLogger().error("Could not save data file!", exception);
+        this.plugin.getLogger().severe("Could not save data file!");
+        exception.printStackTrace();
       }
     }
 

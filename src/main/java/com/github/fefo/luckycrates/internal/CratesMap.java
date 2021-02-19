@@ -37,6 +37,7 @@ import com.google.gson.reflect.TypeToken;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -117,12 +118,13 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
               if (type != null) {
                 this.categorizedCrateTypes.put(typeName, type);
               } else {
-                this.plugin.getSLF4JLogger().warn(path + " is invalid");
+                this.plugin.getLogger().warning(path + " is invalid");
               }
             } catch (final IOException exception) {
               throw new RuntimeException(exception);
             } catch (final JsonSyntaxException exception) {
-              this.plugin.getSLF4JLogger().warn(path + " is invalid", exception);
+              this.plugin.getLogger().warning(path + " is invalid");
+              exception.printStackTrace();
             }
           });
     } catch (final RuntimeException exception) {
@@ -141,10 +143,11 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
                                  .peek(SpinningCrate::summon)
                                  .collect(Collectors.toMap(SpinningCrate::getUuid, Function.identity())));
       } else {
-        this.plugin.getSLF4JLogger().warn("There was an error while reading " + this.cratesLocationsFile);
+        this.plugin.getLogger().warning("There was an error while reading " + this.cratesLocationsFile);
       }
     } catch (final JsonSyntaxException exception) {
-      this.plugin.getSLF4JLogger().warn("There was an error while reading " + this.cratesLocationsFile, exception);
+      this.plugin.getLogger().warning("There was an error while reading " + this.cratesLocationsFile);
+      exception.printStackTrace();
     }
   }
 
@@ -163,14 +166,16 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
   }
 
   public boolean isPlaceOccupied(@NotNull Location location) {
-    location = location.toBlockLocation();
+    location = location.getBlock().getLocation().clone();
     location.setX(location.getBlockX() + 0.5);
     location.setY(location.getBlockY() - 1.0);
     location.setZ(location.getBlockZ() + 0.5);
 
-    return location.getNearbyEntitiesByType(ArmorStand.class, 0.0625, 0.0625, 0.0625)
+    return location.getWorld()
+                   .getNearbyEntities(location, 0.0625, 0.0625, 0.0625)
                    .stream()
-                   .map(ArmorStand::getUniqueId)
+                   .filter(ArmorStand.class::isInstance)
+                   .map(Entity::getUniqueId)
                    .anyMatch(this.crates::containsKey);
   }
 

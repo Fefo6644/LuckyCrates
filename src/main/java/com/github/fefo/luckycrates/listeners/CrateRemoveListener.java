@@ -74,7 +74,8 @@ public final class CrateRemoveListener implements Listener {
       try {
         this.cratesMap.save();
       } catch (final IOException exception) {
-        this.plugin.getSLF4JLogger().error("Could not save data file!", exception);
+        this.plugin.getLogger().severe("Could not save data file!");
+        exception.printStackTrace();
       }
 
       Message.CRATE_REMOVED.send(this.plugin.getSubjectFactory().sender(damager), type);

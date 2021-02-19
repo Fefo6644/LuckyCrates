@@ -7,7 +7,7 @@ plugins {
 defaultTasks("clean", "licenseMain", "shadowJar")
 
 project.group = "com.github.fefo"
-project.version = "2.0"
+project.version = "2.0.1"
 
 java {
     toolchain {
@@ -71,6 +71,7 @@ dependencies {
         exclude(group = "org.jetbrains")
     }
     implementation("com.mojang:brigadier:1.0.17")
+    compileOnly("com.mojang:authlib:1.5.25")
     compileOnly("com.destroystokyo.paper:paper-api:1.12.2-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:20.1.0")
 }

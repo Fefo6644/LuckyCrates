@@ -24,14 +24,14 @@
 
 package com.github.fefo.luckycrates.internal;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
-import com.destroystokyo.paper.profile.ProfileProperty;
-import org.bukkit.Bukkit;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -44,17 +44,40 @@ public final class CrateType {
 
   private static final SplittableRandom RANDOM = new SplittableRandom();
   private static final Base64.Encoder ENCODER = Base64.getEncoder();
+  private static final Field PROFILE_FIELD;
+
+  static {
+    Field profileFieldTemp;
+
+    try {
+      final ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
+      final Class<? extends SkullMeta> craftMetaSkullClass = ((SkullMeta) skull.getItemMeta()).getClass();
+      profileFieldTemp = craftMetaSkullClass.getDeclaredField("profile");
+      profileFieldTemp.setAccessible(true);
+    } catch (final ReflectiveOperationException exception) {
+      profileFieldTemp = null;
+    }
+
+    PROFILE_FIELD = profileFieldTemp;
+  }
 
   private static ItemStack getCustomSkull(final String url) {
-    final PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+    final GameProfile profile = new GameProfile(UUID.randomUUID(), null);
     final byte[] encoded = ENCODER.encode(String.format("{textures:{SKIN:{url:\"%s\"}}}", url).getBytes());
-    final ProfileProperty property = new ProfileProperty("textures", new String(encoded));
-    profile.setProperty(property);
+    final Property property = new Property("textures", new String(encoded));
+    profile.getProperties().put("textures", property);
+    // many textures much wow
 
     final ItemStack itemStack = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
     final SkullMeta skullMeta = (SkullMeta) itemStack.getItemMeta();
-    skullMeta.setPlayerProfile(profile);
-    itemStack.setItemMeta(skullMeta);
+    if (PROFILE_FIELD != null) {
+      try {
+        PROFILE_FIELD.set(skullMeta, profile);
+        itemStack.setItemMeta(skullMeta);
+      } catch (final IllegalAccessException exception) {
+        exception.printStackTrace();
+      }
+    }
 
     return itemStack;
   }

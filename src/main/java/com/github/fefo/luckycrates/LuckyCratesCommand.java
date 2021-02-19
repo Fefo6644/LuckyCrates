@@ -31,6 +31,7 @@ import com.github.fefo.luckycrates.messages.Message;
 import com.github.fefo.luckycrates.messages.MessagingSubject;
 import com.github.fefo.luckycrates.messages.PlayerMessagingSubject;
 import com.github.fefo.luckycrates.messages.SubjectFactory;
+import com.github.fefo.luckycrates.util.CommandMapHelper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.mojang.brigadier.CommandDispatcher;
@@ -89,10 +90,16 @@ public final class LuckyCratesCommand extends Command implements Listener {
 
     setPermission("luckycrates.use");
     setPermissionMessage(Message.NO_PERMISSION.legacy("use this command"));
-    Bukkit.getCommandMap().register(plugin.getName(), this);
+    CommandMapHelper.getCommandMap().register(plugin.getName(), this);
+
+    try {
+      Class.forName("com.destroystokyo.paper.event.server.AsyncTabCompleteEvent");
+      Bukkit.getPluginManager().registerEvents(this, plugin);
+    } catch (final ClassNotFoundException exception) {
+      // ignore
+    }
 
     final LiteralArgumentBuilder<PlayerMessagingSubject> builder = literal(getName());
-
     builder
         .requires(subject -> subject.getPlayer().hasPermission(getPermission()))
         .then(literal("help")
@@ -132,21 +139,25 @@ public final class LuckyCratesCommand extends Command implements Listener {
     return 1;
   }
 
-  private void printUsage(final PlayerMessagingSubject source) {
-    Message.USAGE_TITLE.send(source);
-    for (final String usage : this.dispatcher.getAllUsage(this.root, source, true)) {
-      Message.USAGE_COMMAND.send(source, usage);
+  private void printUsage(final PlayerMessagingSubject subject) {
+    Message.USAGE_TITLE.send(subject);
+    for (final String usage : this.dispatcher.getAllUsage(this.root, subject, true)) {
+      Message.USAGE_COMMAND.send(subject, usage);
     }
   }
 
   private int teleportNearest(final CommandContext<PlayerMessagingSubject> context) {
-    final PlayerMessagingSubject source = context.getSource();
-    final UUID nearestCrate = getNearestCrate(source.getPlayer());
+    final PlayerMessagingSubject subject = context.getSource();
+    final Player player = subject.getPlayer();
+    if (player == null) {
+      return 0;
+    }
+    final UUID nearestCrate = getNearestCrate(player);
 
     if (nearestCrate != null) {
-      source.getPlayer().teleport(this.cratesMap.get(nearestCrate).getLocation());
+      player.teleport(this.cratesMap.get(nearestCrate).getLocation());
     } else {
-      Message.COULDNT_FIND_NEAREST.send(source);
+      Message.COULDNT_FIND_NEAREST.send(subject);
       return 0;
     }
 
@@ -163,18 +174,22 @@ public final class LuckyCratesCommand extends Command implements Listener {
   }
 
   private int remove(final CommandContext<PlayerMessagingSubject> context) {
-    final PlayerMessagingSubject source = context.getSource();
+    final PlayerMessagingSubject subject = context.getSource();
+    final Player player = subject.getPlayer();
+    if (player == null) {
+      return 0;
+    }
 
     if (!this.cratesMap.isEmpty()) {
-      if (this.plugin.getInteractantsHandler().stopRemoving(source.getPlayer().getUniqueId())) {
-        Message.ACTION_CANCELLED.send(source);
+      if (this.plugin.getInteractantsHandler().stopRemoving(player.getUniqueId())) {
+        Message.ACTION_CANCELLED.send(subject);
       } else {
-        this.plugin.getInteractantsHandler().startRemoving(source.getPlayer().getUniqueId());
-        Message.HIT_TO_REMOVE.send(source);
-        Message.RUN_TO_CANCEL.send(source);
+        this.plugin.getInteractantsHandler().startRemoving(player.getUniqueId());
+        Message.HIT_TO_REMOVE.send(subject);
+        Message.RUN_TO_CANCEL.send(subject);
       }
     } else {
-      Message.NO_LOADED_CRATES.send(source);
+      Message.NO_LOADED_CRATES.send(subject);
       return 0;
     }
 
@@ -182,8 +197,12 @@ public final class LuckyCratesCommand extends Command implements Listener {
   }
 
   private int removeNearest(final CommandContext<PlayerMessagingSubject> context) {
-    final PlayerMessagingSubject source = context.getSource();
-    final UUID nearestCrate = getNearestCrate(source.getPlayer());
+    final PlayerMessagingSubject subject = context.getSource();
+    final Player player = subject.getPlayer();
+    if (player == null) {
+      return 0;
+    }
+    final UUID nearestCrate = getNearestCrate(player);
 
     if (nearestCrate != null) {
       final SpinningCrate crate = this.cratesMap.remove(nearestCrate);
@@ -193,12 +212,13 @@ public final class LuckyCratesCommand extends Command implements Listener {
       try {
         this.cratesMap.save();
       } catch (final IOException exception) {
-        this.plugin.getSLF4JLogger().error("Could not save data file!", exception);
+        this.plugin.getLogger().severe("Could not save data file!");
+        exception.printStackTrace();
       }
 
-      Message.CRATE_REMOVED_AT.send(source, source.getPlayer().getName(), type, crateLocation);
+      Message.CRATE_REMOVED_AT.send(subject, player.getName(), type, crateLocation);
     } else {
-      Message.COULDNT_FIND_NEAREST.send(source);
+      Message.COULDNT_FIND_NEAREST.send(subject);
       return 0;
     }
 
@@ -206,21 +226,25 @@ public final class LuckyCratesCommand extends Command implements Listener {
   }
 
   private int set(final CommandContext<PlayerMessagingSubject> context) {
-    final PlayerMessagingSubject source = context.getSource();
+    final PlayerMessagingSubject subject = context.getSource();
     final String crateType = context.getArgument("type", String.class);
-    createCrate(source, true, crateType);
+    createCrate(subject, true, crateType);
     return 1;
   }
 
   private int setPersistent(final CommandContext<PlayerMessagingSubject> context) {
-    final PlayerMessagingSubject source = context.getSource();
+    final PlayerMessagingSubject subject = context.getSource();
     final String crateType = context.getArgument("type", String.class);
-    createCrate(source, false, crateType);
+    createCrate(subject, false, crateType);
     return 1;
   }
 
   private void createCrate(final PlayerMessagingSubject subject, final boolean shouldDisappear, final String type) {
-    final Location location = subject.getPlayer().getLocation().clone();
+    final Player player = subject.getPlayer();
+    if (player == null) {
+      return;
+    }
+    final Location location = player.getLocation().clone();
 
     if (this.cratesMap.isPlaceOccupied(location)) {
       Message.ALREADY_OCCUPIED.send(subject);
@@ -234,7 +258,8 @@ public final class LuckyCratesCommand extends Command implements Listener {
       try {
         this.cratesMap.save();
       } catch (final IOException exception) {
-        this.plugin.getSLF4JLogger().error("Could not save data file!", exception);
+        this.plugin.getLogger().severe("Could not save data file!");
+        exception.printStackTrace();
       }
     }
   }

@@ -44,7 +44,7 @@ public final class SpinningCrate {
 
   public SpinningCrate(Location location, final String category, final boolean shouldDisappear, final ItemStack skull) {
     this.skull = skull;
-    location = location.toBlockLocation();
+    location = location.getBlock().getLocation().clone();
 
     location.setX(location.getBlockX() + 0.5);
     location.setY(location.getBlockY() - 1.0);
