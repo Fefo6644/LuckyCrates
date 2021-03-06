@@ -26,7 +26,7 @@ All listed sub-commands fall under the `/luckycrates`/`/lc` name/label/alias and
 * `/lc reload` - Reloads the config file and crate files.
 * `/lc remove` - Puts the player in a "crates removal" state where you can't use rotating crates and, you can remove one of them by hitting them. Run this command again to exit said state without removing any crates.
 * `/lc remove nearest` - Removes the nearest (loaded) rotating crate in that world and notifies the player of where it was located. This does **not** put the player in the removal state.
-* `/lc set <type>` - Places a rotating crate of the specified type (of the respective file name in the `LuckyCrates/crates` folder) that hides on use, preventing its usage until it appears again (see `secondsHidden.min` and `secondsHidden.max` in [config.yml](https://github.com/Fefo6644/LuckyCrates/blob/master/src/main/resources/crates/donor.json#L4-L7).
+* `/lc set <type>` - Places a rotating crate of the specified type (of the respective file name in the `LuckyCrates/crates` folder) that hides on use, preventing its usage until it appears again (see `secondsHidden.min` and `secondsHidden.max` in [config.yml](https://github.com/Fefo6644/LuckyCrates/blob/master/src/main/resources/crates/donor.json#L4-L7)).
 * `/lc setpersistent <type>` - Places a rotating crate of the specified type that doesn't hide on use.
 
 
