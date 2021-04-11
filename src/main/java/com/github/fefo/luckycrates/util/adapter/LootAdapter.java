@@ -159,8 +159,7 @@ public final class LootAdapter extends TypeAdapter<Loot> {
                     }
                   }
 
-                  if (type != null && duration != null && amplifier != null
-                      && duration > 0 && amplifier >= 0) {
+                  if (type != null && duration != null && amplifier != null && duration > 0 && amplifier >= 0) {
                     potionEffect = new PotionEffect(type, duration * 20, amplifier, false, true, Color.fromRGB((int) (Math.random() * (double) 0x01000000)));
                   }
 

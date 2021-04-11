@@ -28,6 +28,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
 
@@ -64,10 +65,11 @@ public interface Message {
           .append(text("LuckyCrates"),
                   text(" - ", GRAY),
                   text('v'),
-                  text(plugin.getDescription().getVersion()));
+                  text(plugin.getDescription().getVersion()))
+          .hoverEvent(Component.text("github.com/Fefo6644/LuckyCrates", GRAY))
+          .clickEvent(ClickEvent.openUrl("https://github.com/Fefo6644/LuckyCrates"));
 
-  Args1<String> LEGACY = legacy ->
-      legacyAmpersand().deserialize(legacy);
+  Args1<String> LEGACY = legacy -> legacyAmpersand().deserialize(legacy);
 
   Args1<String> NO_PERMISSION = action ->
       prefixed()
@@ -76,15 +78,13 @@ public interface Message {
                   space(),
                   text(action));
 
-  Args0 USAGE_TITLE = () ->
-      prefixed()
-          .append(text("Usages:", WHITE));
+  Args0 USAGE_TITLE = () -> prefixed()
+      .append(text("Usages:", WHITE));
 
   Args1<String> USAGE_COMMAND = command ->
       prefixed()
           .color(GRAY)
-          .append(text('/'),
-                  text(command))
+          .content('/' + command)
           .hoverEvent(showText(text()
                                    .append(text("Click to run:", WHITE),
                                            space(),
@@ -92,24 +92,21 @@ public interface Message {
                                            text(command, GRAY))))
           .clickEvent(suggestCommand('/' + command));
 
-  Args0 PLAYERS_ONLY = () ->
-      prefixed()
-          .append(text("Only players can run this command", RED));
+  Args0 PLAYERS_ONLY = () -> prefixed()
+      .append(text("Only players can run this command", RED));
 
   Args0 FILES_RELOADING_FAILED = () ->
-      text()
+      prefixed()
           .color(RED)
           .append(join(text().append(newline(), prefixed()),
                        text("There was an error while reloading files"),
                        text("Please check the console for any errors")));
 
-  Args0 FILES_RELOADING_SUCCESS = () ->
-      prefixed()
-          .append(text("Files reloaded successfully", YELLOW));
+  Args0 FILES_RELOADING_SUCCESS = () -> prefixed()
+      .append(text("Files reloaded successfully", YELLOW));
 
-  Args0 ACTION_CANCELLED = () ->
-      prefixed()
-          .append(text("Action cancelled", YELLOW));
+  Args0 ACTION_CANCELLED = () -> prefixed()
+      .append(text("Action cancelled", YELLOW));
 
   Args1<String> CRATE_REMOVED = type ->
       prefixed()
@@ -135,41 +132,34 @@ public interface Message {
                                          text(blockX),
                                          text(blockY),
                                          text(blockZ)))
-                            .hoverEvent(showText(text()
-                                                     .append(text("Click to teleport", WHITE))));
+                            .hoverEvent(showText(text("Click to teleport", WHITE)));
                       }))
           .apply(builder -> {
             final String x = String.format("%.2f", location.getX());
             final String y = String.format("%.2f", location.getY());
             final String z = String.format("%.2f", location.getZ());
+            final String command = String.format("/teleport %s %s %s %s", name, x, y, z);
 
-            builder
-                .clickEvent(suggestCommand("/teleport " + name + ' ' + x + ' ' + y + ' ' + z));
+            builder.clickEvent(suggestCommand(command));
           });
 
-  Args0 HIT_TO_REMOVE = () ->
-      prefixed()
-          .append(text("Hit a crate to remove it", YELLOW));
+  Args0 HIT_TO_REMOVE = () -> prefixed()
+      .append(text("Hit a crate to remove it", YELLOW));
 
-  Args0 RUN_TO_CANCEL = () ->
-      prefixed()
-          .append(text("Run the command again to cancel", YELLOW));
+  Args0 RUN_TO_CANCEL = () -> prefixed()
+      .append(text("Run the command again to cancel", YELLOW));
 
-  Args0 NO_LOADED_CRATES = () ->
-      prefixed()
-          .append(text("There are no loaded crates to remove", RED));
+  Args0 NO_LOADED_CRATES = () -> prefixed()
+      .append(text("There are no loaded crates to remove", RED));
 
-  Args0 COULDNT_FIND_NEAREST = () ->
-      prefixed()
-          .append(text("Couldn't find the nearest crate within loaded chunks in this world", RED));
+  Args0 COULDNT_FIND_NEAREST = () -> prefixed()
+      .append(text("Couldn't find the nearest crate within loaded chunks in this world", RED));
 
-  Args0 ALREADY_OCCUPIED = () ->
-      prefixed()
-          .append(text("This place is already occupied by another crate", RED));
+  Args0 ALREADY_OCCUPIED = () -> prefixed()
+      .append(text("This place is already occupied by another crate", RED));
 
-  Args0 SELECT_ANOTHER_LOCATION = () ->
-      prefixed()
-          .append(text("Please, select another location", RED));
+  Args0 SELECT_ANOTHER_LOCATION = () -> prefixed()
+      .append(text("Please, select another location", RED));
 
   Args1<String> CRATE_PLACED = type ->
       prefixed()
@@ -178,7 +168,7 @@ public interface Message {
                   text("crate placed successfully", YELLOW));
 
   static TextComponent.Builder prefixed() {
-    return TextComponent.ofChildren(PREFIX, space()).toBuilder().resetStyle();
+    return TextComponent.ofChildren(PREFIX, space()).toBuilder();
   }
 
   @FunctionalInterface

@@ -31,7 +31,8 @@ import com.github.fefo.luckycrates.internal.CrateType;
 import com.github.fefo.luckycrates.internal.Loot;
 import com.github.fefo.luckycrates.internal.SpinningCrate;
 import com.github.fefo.luckycrates.messages.Message;
-import com.github.fefo.luckycrates.util.TaskScheduler;
+import com.github.fefo.luckycrates.util.NodeResolver;
+import net.milkbowl.vault.chat.Chat;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -45,25 +46,24 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class CrateInteractListener implements Listener {
 
   private final LuckyCratesPlugin plugin;
-  private final TaskScheduler scheduler;
   private final ConfigAdapter configAdapter;
+  private final Chat vaultChat;
 
-  public CrateInteractListener(final LuckyCratesPlugin plugin) {
+  public CrateInteractListener(final LuckyCratesPlugin plugin, final Chat vaultChat) {
     this.plugin = plugin;
-    this.scheduler = plugin.getScheduler();
     this.configAdapter = plugin.getConfigAdapter();
+    this.vaultChat = vaultChat;
   }
 
   @EventHandler
@@ -92,9 +92,11 @@ public final class CrateInteractListener implements Listener {
 
     final CrateType crateType = this.plugin.getCratesMap().getCrateType(crate.getType());
     final Optional<String> permission = crateType.getPermission();
-    if (!(permission.map(player::hasPermission).orElse(true))) {
-      Message.LEGACY.send(this.plugin.getSubjectFactory().player(player), this.configAdapter.get(ConfigKeys.NO_PERM_MESSAGE));
-      return;
+    if (permission.isPresent()) {
+      if (NodeResolver.determineNode(player, permission.get(), this.vaultChat)) {
+        Message.LEGACY.send(this.plugin.getSubjectFactory().player(player), this.configAdapter.get(ConfigKeys.NO_PERM_MESSAGE));
+        return;
+      }
     }
 
     if (crate.shouldDisappear()) {
@@ -127,9 +129,7 @@ public final class CrateInteractListener implements Listener {
       return;
     }
 
-    // amazing pre-1.13
-    final AtomicReference<BukkitTask> task = new AtomicReference<>();
-    task.set(this.scheduler.sync(new Runnable() {
+    new BukkitRunnable() {
 
       private int index = 0;
 
@@ -137,8 +137,7 @@ public final class CrateInteractListener implements Listener {
       public void run() {
         while (true) {
           if (this.index < randomLoot.items.size()) {
-            if (randomLoot.items.get(this.index) == null ||
-                randomLoot.items.get(this.index).getType() == Material.AIR) {
+            if (randomLoot.items.get(this.index) == null || randomLoot.items.get(this.index).getType() == Material.AIR) {
               ++this.index;
               continue;
             }
@@ -150,13 +149,10 @@ public final class CrateInteractListener implements Listener {
             return;
           }
 
-          if (task.get() != null) {
-            task.get().cancel();
-          }
-
+          cancel();
           return;
         }
       }
-    }, 0L, 20L / 3L));
+    }.runTaskTimer(this.plugin, 0L, 20L / 3L);
   }
 }

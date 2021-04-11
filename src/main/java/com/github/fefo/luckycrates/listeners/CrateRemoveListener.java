@@ -25,7 +25,7 @@
 package com.github.fefo.luckycrates.listeners;
 
 import com.github.fefo.luckycrates.LuckyCratesPlugin;
-import com.github.fefo.luckycrates.internal.CratesMap;
+import com.github.fefo.luckycrates.internal.CrateMap;
 import com.github.fefo.luckycrates.internal.SpinningCrate;
 import com.github.fefo.luckycrates.messages.Message;
 import org.bukkit.entity.Entity;
@@ -42,18 +42,18 @@ import java.util.UUID;
 public final class CrateRemoveListener implements Listener {
 
   private final LuckyCratesPlugin plugin;
-  private final CratesMap cratesMap;
+  private final CrateMap crateMap;
 
   public CrateRemoveListener(final LuckyCratesPlugin plugin) {
     this.plugin = plugin;
-    this.cratesMap = plugin.getCratesMap();
+    this.crateMap = plugin.getCratesMap();
   }
 
   @EventHandler
   public void crateRemove(@NotNull final EntityDamageByEntityEvent event) {
     final Entity damaged = event.getEntity();
     final UUID uuid = damaged.getUniqueId();
-    final SpinningCrate crate = this.cratesMap.get(uuid);
+    final SpinningCrate crate = this.crateMap.get(uuid);
 
     if (!this.plugin.getInteractantsHandler().isAnyoneRemoving() || crate == null) {
       return;
@@ -68,11 +68,11 @@ public final class CrateRemoveListener implements Listener {
     final Entity damager = event.getDamager();
 
     if (damager instanceof Player && this.plugin.getInteractantsHandler().stopRemoving(damager.getUniqueId())) {
-      this.cratesMap.remove(uuid);
+      this.crateMap.remove(uuid);
       final String type = crate.getType();
 
       try {
-        this.cratesMap.save();
+        this.crateMap.save();
       } catch (final IOException exception) {
         this.plugin.getLogger().severe("Could not save data file!");
         exception.printStackTrace();

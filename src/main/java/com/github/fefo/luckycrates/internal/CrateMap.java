@@ -59,9 +59,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class CratesMap implements Map<UUID, SpinningCrate> {
+public final class CrateMap implements Map<UUID, SpinningCrate> {
 
-  private static final Type CRATES_SET_TYPE = TypeToken.getParameterized(Set.class, SpinningCrate.class).getType();
+  private static final Type CRATE_SET_TYPE = TypeToken.getParameterized(Set.class, SpinningCrate.class).getType();
   public static final Gson GSON =
       new GsonBuilder()
           .registerTypeAdapter(World.class, WorldAdapter.ADAPTER)
@@ -73,10 +73,10 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
           .create();
 
   private static final PathMatcher JSON_MATCHER = FileSystems.getDefault().getPathMatcher("regex:\\w+\\.json");
-  private static final Predicate<Path> IS_JSON = path -> {
+  private static final Predicate<Path> IS_JSON_FILE = path -> {
     return Files.isRegularFile(path) && JSON_MATCHER.matches(path.getFileName());
   };
-  private static final Predicate<Path> IS_EXAMPLE = path -> path.endsWith("example.json");
+  private static final Predicate<Path> IS_EXAMPLE_CRATE = path -> path.endsWith("example.json");
 
   private final LuckyCratesPlugin plugin;
   private final Path cratesFolder;
@@ -84,7 +84,7 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
   private final Map<String, CrateType> categorizedCrateTypes = new HashMap<>();
   private final Map<UUID, SpinningCrate> crates = new HashMap<>();
 
-  public CratesMap(final LuckyCratesPlugin plugin) {
+  public CrateMap(final LuckyCratesPlugin plugin) {
     this.plugin = plugin;
     this.cratesFolder = plugin.getDataFolderPath().resolve("crates");
     this.cratesLocationsFile = plugin.getDataFolderPath().resolve("crateslocations.json");
@@ -110,7 +110,7 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
 
     try (final Stream<Path> crates = Files.walk(this.cratesFolder)) {
       crates
-          .filter(IS_JSON.and(IS_EXAMPLE.negate()))
+          .filter(IS_JSON_FILE.and(IS_EXAMPLE_CRATE.negate()))
           .forEach(path -> {
             final String typeName = path.getFileName().toString().replace(".json", "");
             try (final BufferedReader reader = Files.newBufferedReader(path)) {
@@ -136,7 +136,7 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
     }
 
     try (final BufferedReader reader = Files.newBufferedReader(this.cratesLocationsFile)) {
-      final Set<SpinningCrate> crates = GSON.fromJson(reader, CRATES_SET_TYPE);
+      final Set<SpinningCrate> crates = GSON.fromJson(reader, CRATE_SET_TYPE);
       if (crates != null) {
         this.crates.putAll(crates.stream()
                                  .peek(crate -> crate.setSkull(this.getCrateType(crate.getType()).getSkull()))
@@ -153,7 +153,7 @@ public final class CratesMap implements Map<UUID, SpinningCrate> {
 
   public void save() throws IOException {
     try (final BufferedWriter writer = Files.newBufferedWriter(this.cratesLocationsFile)) {
-      GSON.toJson(this.crates.values(), CRATES_SET_TYPE, writer);
+      GSON.toJson(this.crates.values(), CRATE_SET_TYPE, writer);
     }
   }
 

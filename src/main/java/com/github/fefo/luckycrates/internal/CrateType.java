@@ -32,11 +32,11 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.SplittableRandom;
 import java.util.UUID;
 
@@ -86,7 +86,7 @@ public final class CrateType {
   private final ItemStack skull;
   private final int secondsHiddenMin;
   private final int secondsHiddenMax;
-  private final List<Loot> rewards;
+  private final Queue<Loot> rewards;
 
   public CrateType(final String permission, final String texture,
                    final int secondsHiddenMin, final int secondsHiddenMax, final Collection<Loot> rewards) {
@@ -94,7 +94,7 @@ public final class CrateType {
     this.skull = getCustomSkull("https://textures.minecraft.net/texture/" + texture);
     this.secondsHiddenMin = secondsHiddenMin;
     this.secondsHiddenMax = secondsHiddenMax;
-    this.rewards = new ArrayList<>(rewards);
+    this.rewards = new PriorityQueue<>(rewards);
   }
 
   public @NotNull ItemStack getSkull() {
@@ -125,6 +125,6 @@ public final class CrateType {
     }
 
     // This will never be reached but compilers are stupid.
-    return this.rewards.get(0);
+    return this.rewards.peek();
   }
 }

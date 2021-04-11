@@ -25,7 +25,7 @@
 package com.github.fefo.luckycrates;
 
 import com.destroystokyo.paper.event.server.AsyncTabCompleteEvent;
-import com.github.fefo.luckycrates.internal.CratesMap;
+import com.github.fefo.luckycrates.internal.CrateMap;
 import com.github.fefo.luckycrates.internal.SpinningCrate;
 import com.github.fefo.luckycrates.messages.Message;
 import com.github.fefo.luckycrates.messages.MessagingSubject;
@@ -61,6 +61,7 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
@@ -72,7 +73,7 @@ public final class LuckyCratesCommand extends Command implements Listener {
   private static final Joiner OR_JOINER = Joiner.on('|');
 
   private final LuckyCratesPlugin plugin;
-  private final CratesMap cratesMap;
+  private final CrateMap crateMap;
   private final SubjectFactory subjectFactory;
   private final Predicate<? super String> commandPredicate;
   private final CommandDispatcher<PlayerMessagingSubject> dispatcher = new CommandDispatcher<>();
@@ -81,7 +82,7 @@ public final class LuckyCratesCommand extends Command implements Listener {
   public LuckyCratesCommand(final LuckyCratesPlugin plugin) {
     super("luckycrates", "Command used to place, locate and remove spinning crates", "/luckycrates help", ImmutableList.of("lc"));
     this.plugin = plugin;
-    this.cratesMap = plugin.getCratesMap();
+    this.crateMap = plugin.getCratesMap();
     this.subjectFactory = plugin.getSubjectFactory();
 
     this.commandPredicate = Pattern.compile(
@@ -96,22 +97,18 @@ public final class LuckyCratesCommand extends Command implements Listener {
       Class.forName("com.destroystokyo.paper.event.server.AsyncTabCompleteEvent");
       Bukkit.getPluginManager().registerEvents(this, plugin);
     } catch (final ClassNotFoundException exception) {
-      // ignore
+      // ignore, we just won't compute suggestion completions asynchronously
     }
 
     final LiteralArgumentBuilder<PlayerMessagingSubject> builder = literal(getName());
     builder
         .requires(subject -> subject.getPlayer().hasPermission(getPermission()))
-        .then(literal("help")
-                  .executes(this::printInfo))
-        .then(literal("nearest")
-                  .executes(this::teleportNearest))
-        .then(literal("reload")
-                  .executes(this::reload))
+        .then(literal("help").executes(this::printInfo))
+        .then(literal("nearest").executes(this::teleportNearest))
+        .then(literal("reload").executes(this::reload))
         .then(literal("remove")
                   .executes(this::remove)
-                  .then(literal("nearest")
-                            .executes(this::removeNearest)))
+                  .then(literal("nearest").executes(this::removeNearest)))
         .then(literal("set")
                   .then(argument("type", StringArgumentType.word())
                             .suggests(this::suggestCrateType)
@@ -126,10 +123,10 @@ public final class LuckyCratesCommand extends Command implements Listener {
 
   private CompletableFuture<Suggestions> suggestCrateType(final CommandContext<PlayerMessagingSubject> context, final SuggestionsBuilder builder) {
     final String lowercase = builder.getRemaining().toLowerCase(Locale.ROOT);
-    this.cratesMap.getCategorizedCrateTypes()
-                  .keySet().stream()
-                  .filter(s -> s.toLowerCase(Locale.ROOT).startsWith(lowercase))
-                  .forEach(builder::suggest);
+    this.crateMap.getCategorizedCrateTypes()
+                 .keySet().stream()
+                 .filter(s -> s.toLowerCase(Locale.ROOT).startsWith(lowercase))
+                 .forEach(builder::suggest);
     return builder.buildFuture();
   }
 
@@ -155,7 +152,7 @@ public final class LuckyCratesCommand extends Command implements Listener {
     final UUID nearestCrate = getNearestCrate(player);
 
     if (nearestCrate != null) {
-      player.teleport(this.cratesMap.get(nearestCrate).getLocation());
+      player.teleport(this.crateMap.get(nearestCrate).getLocation());
     } else {
       Message.COULDNT_FIND_NEAREST.send(subject);
       return 0;
@@ -180,7 +177,7 @@ public final class LuckyCratesCommand extends Command implements Listener {
       return 0;
     }
 
-    if (!this.cratesMap.isEmpty()) {
+    if (!this.crateMap.isEmpty()) {
       if (this.plugin.getInteractantsHandler().stopRemoving(player.getUniqueId())) {
         Message.ACTION_CANCELLED.send(subject);
       } else {
@@ -205,12 +202,12 @@ public final class LuckyCratesCommand extends Command implements Listener {
     final UUID nearestCrate = getNearestCrate(player);
 
     if (nearestCrate != null) {
-      final SpinningCrate crate = this.cratesMap.remove(nearestCrate);
+      final SpinningCrate crate = this.crateMap.remove(nearestCrate);
       final String type = crate.getType();
       final Location crateLocation = crate.getLocation();
 
       try {
-        this.cratesMap.save();
+        this.crateMap.save();
       } catch (final IOException exception) {
         this.plugin.getLogger().severe("Could not save data file!");
         exception.printStackTrace();
@@ -246,17 +243,17 @@ public final class LuckyCratesCommand extends Command implements Listener {
     }
     final Location location = player.getLocation().clone();
 
-    if (this.cratesMap.isPlaceOccupied(location)) {
+    if (this.crateMap.isPlaceOccupied(location)) {
       Message.ALREADY_OCCUPIED.send(subject);
       Message.SELECT_ANOTHER_LOCATION.send(subject);
 
     } else {
-      final SpinningCrate crate = new SpinningCrate(location, type, shouldDisappear, this.cratesMap.getCrateType(type).getSkull());
-      this.cratesMap.put(crate.getUuid(), crate);
+      final SpinningCrate crate = new SpinningCrate(location, type, shouldDisappear, this.crateMap.getCrateType(type).getSkull());
+      this.crateMap.put(crate.getUuid(), crate);
       Message.CRATE_PLACED.send(subject, type);
 
       try {
-        this.cratesMap.save();
+        this.crateMap.save();
       } catch (final IOException exception) {
         this.plugin.getLogger().severe("Could not save data file!");
         exception.printStackTrace();
@@ -267,8 +264,8 @@ public final class LuckyCratesCommand extends Command implements Listener {
   private UUID getNearestCrate(final Player player) {
     return player.getWorld().getEntitiesByClass(ArmorStand.class).stream()
                  .map(Entity::getUniqueId)
-                 .filter(this.cratesMap::containsKey)
-                 .map(this.cratesMap::get)
+                 .map(this.crateMap::get)
+                 .filter(Objects::nonNull)
                  .min(new CratesSorter(player))
                  .map(SpinningCrate::getUuid)
                  .orElse(null);
@@ -318,8 +315,7 @@ public final class LuckyCratesCommand extends Command implements Listener {
     return tabComplete(subject, input);
   }
 
-  @EventHandler(ignoreCancelled = true)
-  private void onAsyncTabComplete(final AsyncTabCompleteEvent event) {
+  private void asyncTabComplete(final AsyncTabCompleteEvent event) {
     if (event.isHandled() || !event.isCommand()) {
       return;
     }

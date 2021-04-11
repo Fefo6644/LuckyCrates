@@ -42,12 +42,11 @@ public final class TaskScheduler {
 
   private final Plugin plugin;
   private final BukkitScheduler bukkitScheduler = Bukkit.getScheduler();
-  private final ScheduledExecutorService asyncScheduler = Executors.newScheduledThreadPool(
-      16, new ThreadFactoryBuilder()
-          .setDaemon(false)
-          .setNameFormat("luckycrates-scheduler-thread-%d")
-          .setPriority(Thread.NORM_PRIORITY)
-          .build());
+  private final ScheduledExecutorService asyncScheduler =
+      Executors.newScheduledThreadPool(16, new ThreadFactoryBuilder().setDaemon(false)
+                                                                     .setNameFormat("luckycrates-scheduler-thread-%d")
+                                                                     .setPriority(Thread.NORM_PRIORITY)
+                                                                     .build());
 
   public TaskScheduler(final Plugin plugin) {
     this.plugin = plugin;

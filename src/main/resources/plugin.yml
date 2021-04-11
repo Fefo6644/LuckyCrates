@@ -6,6 +6,7 @@
   "version": "${pluginVersion}",
   "main": "com.github.fefo.luckycrates.LuckyCratesPlugin",
   "load": "POSTWORLD",
+  "depend": [ "Vault" ],
 
   "permissions": {
     "luckycrates.use": {
