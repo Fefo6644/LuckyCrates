@@ -46,15 +46,13 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.RootCommandNode;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginIdentifiableCommand;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -68,7 +66,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public final class LuckyCratesCommand extends Command implements Listener {
+public final class LuckyCratesCommand extends Command implements PluginIdentifiableCommand {
 
   private static final Joiner OR_JOINER = Joiner.on('|');
 
@@ -95,7 +93,7 @@ public final class LuckyCratesCommand extends Command implements Listener {
 
     try {
       Class.forName("com.destroystokyo.paper.event.server.AsyncTabCompleteEvent");
-      Bukkit.getPluginManager().registerEvents(this, plugin);
+      plugin.registerListener(AsyncTabCompleteEvent.class, this::asyncTabComplete, false);
     } catch (final ClassNotFoundException exception) {
       // ignore, we just won't compute suggestion completions asynchronously
     }
@@ -119,6 +117,11 @@ public final class LuckyCratesCommand extends Command implements Listener {
                             .executes(this::setPersistent)));
 
     this.root.addChild(builder.build());
+  }
+
+  @Override
+  public LuckyCratesPlugin getPlugin() {
+    return this.plugin;
   }
 
   private CompletableFuture<Suggestions> suggestCrateType(final CommandContext<PlayerMessagingSubject> context, final SuggestionsBuilder builder) {

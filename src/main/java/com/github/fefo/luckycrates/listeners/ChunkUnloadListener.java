@@ -28,20 +28,18 @@ import com.github.fefo.luckycrates.LuckyCratesPlugin;
 import com.github.fefo.luckycrates.internal.CrateMap;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
-public final class ChunkUnloadListener implements Listener {
+public final class ChunkUnloadListener {
 
   private final CrateMap crateMap;
 
   public ChunkUnloadListener(final LuckyCratesPlugin plugin) {
     this.crateMap = plugin.getCratesMap();
+    plugin.registerListener(ChunkUnloadEvent.class, this::chunkUnload);
   }
 
-  @EventHandler
-  public void onChunkUnload(final ChunkUnloadEvent event) {
+  private void chunkUnload(final ChunkUnloadEvent event) {
     if (this.crateMap.isEmpty()) {
       return;
     }

@@ -42,8 +42,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -54,7 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public final class CrateInteractListener implements Listener {
+public final class CrateInteractListener {
 
   private final LuckyCratesPlugin plugin;
   private final ConfigAdapter configAdapter;
@@ -64,10 +62,10 @@ public final class CrateInteractListener implements Listener {
     this.plugin = plugin;
     this.configAdapter = plugin.getConfigAdapter();
     this.vaultChat = vaultChat;
+    plugin.registerListener(PlayerInteractAtEntityEvent.class, this::onCrateInteract);
   }
 
-  @EventHandler
-  public void onCrateInteract(final PlayerInteractAtEntityEvent event) {
+  private void onCrateInteract(final PlayerInteractAtEntityEvent event) {
     if (this.plugin.getCratesMap().isEmpty()) {
       return;
     }

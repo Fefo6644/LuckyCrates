@@ -30,16 +30,13 @@ import com.github.fefo.luckycrates.internal.SpinningCrate;
 import com.github.fefo.luckycrates.messages.Message;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.UUID;
 
-public final class CrateRemoveListener implements Listener {
+public final class CrateRemoveListener {
 
   private final LuckyCratesPlugin plugin;
   private final CrateMap crateMap;
@@ -47,10 +44,10 @@ public final class CrateRemoveListener implements Listener {
   public CrateRemoveListener(final LuckyCratesPlugin plugin) {
     this.plugin = plugin;
     this.crateMap = plugin.getCratesMap();
+    plugin.registerListener(EntityDamageByEntityEvent.class, this::crateRemove);
   }
 
-  @EventHandler
-  public void crateRemove(@NotNull final EntityDamageByEntityEvent event) {
+  private void crateRemove(final EntityDamageByEntityEvent event) {
     final Entity damaged = event.getEntity();
     final UUID uuid = damaged.getUniqueId();
     final SpinningCrate crate = this.crateMap.get(uuid);

@@ -109,10 +109,10 @@ public final class LuckyCratesPlugin extends JavaPlugin implements Listener {
 
     final Chat vaultChat = Bukkit.getServicesManager().load(Chat.class);
     new LuckyCratesCommand(this);
-    Bukkit.getPluginManager().registerEvents(new CrateInteractListener(this, vaultChat), this);
-    Bukkit.getPluginManager().registerEvents(new CrateRemoveListener(this), this);
-    Bukkit.getPluginManager().registerEvents(new ChunkLoadListener(this), this);
-    Bukkit.getPluginManager().registerEvents(new ChunkUnloadListener(this), this);
+    new CrateInteractListener(this, vaultChat);
+    new CrateRemoveListener(this);
+    new ChunkLoadListener(this);
+    new ChunkUnloadListener(this);
 
     this.scheduler.async(() -> {
       this.crateMap.values().forEach(crate -> {
