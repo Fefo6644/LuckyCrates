@@ -6,7 +6,7 @@ This plugin allows you to create fully customizable rotating custom-textured cus
 * Rotating speed
 * Enchanted items
 * Custom potions
-* Permissions requirement
+* Permissions requirement (requires [Vault](https://dev.bukkit.org/projects/vault))
 * Randomized loot
 * Loot weights/rarity
 * More???
