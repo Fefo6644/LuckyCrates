@@ -60,7 +60,7 @@ public interface Message {
                   text(']'))
           .build();
 
-  Args1<Plugin> PLUGIN_INFO = plugin ->
+  Args1<Plugin> PLUGIN_INFO = plugin -> prefixed(
       text()
           .color(YELLOW)
           .append(text(plugin.getName()),
@@ -86,7 +86,7 @@ public interface Message {
                   text('v'),
                   text(plugin.getDescription().getVersion()))
           .hoverEvent(text(plugin.getDescription().getWebsite(), GRAY))
-          .clickEvent(openUrl(plugin.getDescription().getWebsite()));
+          .clickEvent(openUrl(plugin.getDescription().getWebsite())));
 
   Args1<String> LEGACY = legacy -> legacyAmpersand().deserialize(legacy);
 
