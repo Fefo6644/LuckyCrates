@@ -6,8 +6,8 @@ plugins {
 
 defaultTasks("clean", "licenseMain", "test", "shadowJar")
 
-project.group = "com.github.fefo"
-project.version = "2.0.2"
+project.group = "io.github.emilyy-dev"
+project.version = "2.0.3"
 
 java {
     toolchain {
@@ -43,8 +43,8 @@ tasks {
     }
 
     shadowJar {
-        relocate("net.kyori", "com.github.fefo.luckycrates.lib.kyori")
-        relocate("com.mojang.brigadier", "com.github.fefo.luckycrates.lib.brigadier")
+        relocate("net.kyori", "io.github.emilyydev.luckycrates.lib.kyori")
+        relocate("com.mojang.brigadier", "io.github.emilyydev.luckycrates.lib.brigadier")
     }
 
     processResources {
@@ -63,8 +63,7 @@ license {
     mapping("java", "DOUBLESLASH_STYLE")
 
     ext["year"] = 2021
-    ext["name"] = "Fefo6644"
-    ext["email"] = "federico.lopez.1999@outlook.com"
+    ext["name"] = "emilyy-dev"
 
     include("**/*.java")
 }
@@ -83,7 +82,7 @@ dependencies {
     compileOnly("com.mojang:authlib:1.5.25")
     compileOnly("com.destroystokyo.paper:paper-api:1.12.2-R0.1-SNAPSHOT")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
-        exclude(group = "org.bukkit", module = "bukkit")
+        exclude("org.bukkit", "bukkit")
     }
     compileOnly("org.jetbrains:annotations:20.1.0")
 
