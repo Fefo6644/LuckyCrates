@@ -28,6 +28,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import io.github.emilyydev.luckycrates.internal.CrateMap;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -46,7 +47,7 @@ public final class LocationAdapter extends TypeAdapter<Location> {
 
     out.name("world");
     if (location.getWorld() != null) {
-      WorldAdapter.ADAPTER.write(out, location.getWorld());
+      CrateMap.GSON.toJson(location.getWorld(), World.class, out);
     } else {
       out.nullValue();
     }
@@ -71,7 +72,7 @@ public final class LocationAdapter extends TypeAdapter<Location> {
       switch (field) {
         case "world":
           if (in.peek() != JsonToken.NULL) {
-            world = WorldAdapter.ADAPTER.read(in);
+            world = CrateMap.GSON.fromJson(in, World.class);
           } else {
             in.nextNull();
           }

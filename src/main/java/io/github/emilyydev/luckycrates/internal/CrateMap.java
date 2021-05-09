@@ -24,16 +24,16 @@
 
 package io.github.emilyydev.luckycrates.internal;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 import io.github.emilyydev.luckycrates.LuckyCratesPlugin;
 import io.github.emilyydev.luckycrates.util.adapter.CrateTypeAdapter;
 import io.github.emilyydev.luckycrates.util.adapter.LocationAdapter;
 import io.github.emilyydev.luckycrates.util.adapter.LootAdapter;
 import io.github.emilyydev.luckycrates.util.adapter.SpinningCrateAdapter;
 import io.github.emilyydev.luckycrates.util.adapter.WorldAdapter;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
@@ -64,7 +64,7 @@ public final class CrateMap implements Map<UUID, SpinningCrate> {
   private static final Type CRATE_SET_TYPE = TypeToken.getParameterized(Set.class, SpinningCrate.class).getType();
   public static final Gson GSON =
       new GsonBuilder()
-          .registerTypeAdapter(World.class, WorldAdapter.ADAPTER)
+          .registerTypeHierarchyAdapter(World.class, WorldAdapter.ADAPTER)
           .registerTypeAdapter(Location.class, LocationAdapter.ADAPTER)
           .registerTypeAdapter(SpinningCrate.class, SpinningCrateAdapter.ADAPTER)
           .registerTypeAdapter(Loot.class, LootAdapter.ADAPTER)

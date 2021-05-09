@@ -3,6 +3,7 @@
   "authors": [
     "emilyy-dev"
   ],
+  "website": "https://github.com/emilyy-dev/LuckyCrates",
   "version": "${pluginVersion}",
   "main": "io.github.emilyydev.luckycrates.LuckyCratesPlugin",
   "load": "POSTWORLD",

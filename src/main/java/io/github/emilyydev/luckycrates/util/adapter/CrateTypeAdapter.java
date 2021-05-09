@@ -24,12 +24,13 @@
 
 package io.github.emilyydev.luckycrates.util.adapter;
 
-import io.github.emilyydev.luckycrates.internal.CrateType;
-import io.github.emilyydev.luckycrates.internal.Loot;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import io.github.emilyydev.luckycrates.internal.CrateMap;
+import io.github.emilyydev.luckycrates.internal.CrateType;
+import io.github.emilyydev.luckycrates.internal.Loot;
 import org.apache.commons.lang.Validate;
 
 import java.io.IOException;
@@ -105,7 +106,7 @@ public final class CrateTypeAdapter extends TypeAdapter<CrateType> {
           rewards = new ArrayList<>();
 
           while (in.hasNext()) {
-            rewards.add(LootAdapter.ADAPTER.read(in));
+            rewards.add(CrateMap.GSON.fromJson(in, Loot.class));
           }
 
           in.endArray();

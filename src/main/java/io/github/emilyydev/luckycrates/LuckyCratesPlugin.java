@@ -52,6 +52,18 @@ import java.util.function.Consumer;
 
 public final class LuckyCratesPlugin extends JavaPlugin implements Listener {
 
+  static {
+    try {
+      // ensure class loading, run static init block (clinit)
+      final ClassLoader classLoader = LuckyCratesPlugin.class.getClassLoader();
+      classLoader.loadClass("io.github.emilyydev.luckycrates.util.CommandMapHelper");
+      classLoader.loadClass("io.github.emilyydev.luckycrates.internal.CrateType");
+    } catch (final ClassNotFoundException exception) {
+      // ??? shouldn't throw but if it does we're up to no bueno
+      throw new RuntimeException(exception);
+    }
+  }
+
   private final Path dataFolder = getDataFolder().toPath();
   private final ConfigAdapter configAdapter = new JsonConfigAdapter(this, this.dataFolder);
   private final TaskScheduler scheduler = new TaskScheduler(this);

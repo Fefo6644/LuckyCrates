@@ -31,12 +31,15 @@ import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
 
+import java.util.List;
+import java.util.Locale;
+
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.toComponent;
 import static net.kyori.adventure.text.event.ClickEvent.openUrl;
 import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
-import static net.kyori.adventure.text.event.HoverEvent.showText;
 import static net.kyori.adventure.text.format.NamedTextColor.GOLD;
 import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
@@ -60,12 +63,30 @@ public interface Message {
   Args1<Plugin> PLUGIN_INFO = plugin ->
       text()
           .color(YELLOW)
-          .append(text("LuckyCrates"),
-                  text(" - ", GRAY),
+          .append(text(plugin.getName()),
+                  space(),
+                  text("by"),
+                  space())
+          .apply(builder -> {
+            final List<String> authors = plugin.getDescription().getAuthors();
+            builder.append(text(authors.get(0), GOLD));
+            if (authors.size() > 1) {
+              final Component contributors = authors.stream().skip(1).map(Component::text).collect(toComponent(text(", ")));
+
+              builder.append(space(),
+                             text("and", GOLD),
+                             space(),
+                             text()
+                                 .content("contributors")
+                                 .color(GOLD)
+                                 .hoverEvent(contributors));
+            }
+          })
+          .append(text(" - ", GRAY),
                   text('v'),
                   text(plugin.getDescription().getVersion()))
-          .hoverEvent(text("github.com/emilyy-dev/LuckyCrates", GRAY))
-          .clickEvent(openUrl("https://github.com/emilyy-dev/LuckyCrates"));
+          .hoverEvent(text(plugin.getDescription().getWebsite(), GRAY))
+          .clickEvent(openUrl(plugin.getDescription().getWebsite()));
 
   Args1<String> LEGACY = legacy -> legacyAmpersand().deserialize(legacy);
 
@@ -80,11 +101,12 @@ public interface Message {
       text()
           .color(GRAY)
           .content('/' + command)
-          .hoverEvent(showText(text()
-                                   .append(text("Click to run:", WHITE),
-                                           space(),
-                                           text('/', GRAY),
-                                           text(command, GRAY))))
+          .hoverEvent(text()
+                          .append(text("Click to run:", WHITE),
+                                  space(),
+                                  text('/', GRAY),
+                                  text(command, GRAY))
+                          .build())
           .clickEvent(suggestCommand('/' + command)));
 
   Args0 PLAYERS_ONLY = () -> prefixed(text("Only players can run this command", RED));
@@ -119,12 +141,12 @@ public interface Message {
                                      text(blockX),
                                      text(blockY),
                                      text(blockZ)))
-                        .hoverEvent(showText(text("Click to teleport", WHITE)));
+                        .hoverEvent(text("Click to teleport", WHITE));
                   }))
           .apply(builder -> {
-            final String x = String.format("%.2f", location.getX());
-            final String y = String.format("%.2f", location.getY());
-            final String z = String.format("%.2f", location.getZ());
+            final String x = String.format(Locale.ROOT, "%.2f", location.getX());
+            final String y = String.format(Locale.ROOT, "%.2f", location.getY());
+            final String z = String.format(Locale.ROOT, "%.2f", location.getZ());
             final String command = String.format("/teleport %s %s %s %s", name, x, y, z);
 
             builder.clickEvent(suggestCommand(command));
@@ -150,21 +172,12 @@ public interface Message {
   Args0 CHECK_CONSOLE_FOR_ERRORS = () -> prefixed(text("Please check the console for any errors", RED));
 
   static TextComponent prefixed(final ComponentLike first, final ComponentLike... rest) {
-    if (rest.length == 0) {
-      return text()
-          .append(PREFIX)
-          .append(space())
-          .append(first)
-          .build();
-    } else {
-      return text()
-          .append(PREFIX)
-          .append(space())
-          .append(first)
-          .append(space())
-          .append(rest)
-          .build();
-    }
+    return text()
+        .append(PREFIX)
+        .append(space())
+        .append(first)
+        .append(rest)
+        .build();
   }
 
   @FunctionalInterface

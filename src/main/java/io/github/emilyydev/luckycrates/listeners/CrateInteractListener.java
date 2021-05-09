@@ -91,7 +91,7 @@ public final class CrateInteractListener {
     final CrateType crateType = this.plugin.getCratesMap().getCrateType(crate.getType());
     final Optional<String> permission = crateType.getPermission();
     if (permission.isPresent()) {
-      if (NodeResolver.determineNode(player, permission.get(), this.vaultChat)) {
+      if (NodeResolver.checkNode(player, permission.get(), this.vaultChat)) {
         Message.LEGACY.send(this.plugin.getSubjectFactory().player(player), this.configAdapter.get(ConfigKeys.NO_PERM_MESSAGE));
         return;
       }

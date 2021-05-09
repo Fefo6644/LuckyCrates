@@ -24,11 +24,11 @@
 
 package io.github.emilyydev.luckycrates.util.adapter;
 
-import io.github.emilyydev.luckycrates.internal.Loot;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import io.github.emilyydev.luckycrates.internal.Loot;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -221,6 +221,7 @@ public final class LootAdapter extends TypeAdapter<Loot> {
             final ItemStack itemStack = new ItemStack(material, amount);
 
             if (data != null) {
+              // TODO: is this correct or should ItemStack#setDurability(byte) be used?
               itemStack.getData().setData(data);
             }
 

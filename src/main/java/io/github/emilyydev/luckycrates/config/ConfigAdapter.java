@@ -24,9 +24,9 @@
 
 package io.github.emilyydev.luckycrates.config;
 
-import io.github.emilyydev.luckycrates.LuckyCratesPlugin;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import io.github.emilyydev.luckycrates.LuckyCratesPlugin;
 import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

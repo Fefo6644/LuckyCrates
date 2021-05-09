@@ -42,6 +42,7 @@ public final class CommandMapHelper {
       final MethodType getCommandMapMethodType = MethodType.methodType(CommandMap.class);
       GET_COMMAND_MAP_METHOD = lookup.findVirtual(craftServerClass, "getCommandMap", getCommandMapMethodType);
     } catch (final ReflectiveOperationException exception) {
+      // throw unchecked, can't register commands without it
       throw new RuntimeException(exception);
     }
   }
@@ -52,5 +53,9 @@ public final class CommandMapHelper {
     } catch (final Throwable exception) {
       throw new RuntimeException(exception);
     }
+  }
+
+  private CommandMapHelper() {
+    throw new UnsupportedOperationException("Cannot instantiate utility class");
   }
 }

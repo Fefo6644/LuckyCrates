@@ -31,12 +31,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.util.Base64;
 import java.util.Collection;
@@ -61,33 +59,30 @@ public final class CrateType {
       reflectedProfileField.setAccessible(true);
       profileFieldSetter = lookup.unreflectSetter(reflectedProfileField);
     } catch (final Throwable throwable) {
-      final MethodType dummyMethodType = MethodType.methodType(void.class, ItemMeta.class, GameProfile.class);
-      try {
-        profileFieldSetter = lookup.findStatic(CrateType.class, "dummy", dummyMethodType);
-      } catch (final ReflectiveOperationException exception) {
-        // won't be reached
-        throw new RuntimeException(exception);
-      }
+      profileFieldSetter = null;
     }
 
     PROFILE_FIELD_SETTER = profileFieldSetter;
   }
 
-  private static void dummy(final ItemMeta meta, final GameProfile profile) { }
-
   private static ItemStack getCustomSkull(final String url) {
-    final GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-    final byte[] encoded = ENCODER.encode(String.format("{textures:{SKIN:{url:\"%s\"}}}", url).getBytes());
-    final Property property = new Property("textures", new String(encoded));
-    profile.getProperties().put("textures", property);
-    // many textures much wow
-
     final ItemStack itemStack = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
-    final SkullMeta skullMeta = (SkullMeta) itemStack.getItemMeta();
+    if (PROFILE_FIELD_SETTER == null) {
+      return itemStack;
+    }
+
     try {
-      PROFILE_FIELD_SETTER.invoke(skullMeta, profile);
-      itemStack.setItemMeta(skullMeta);
+      final ItemMeta itemMeta = itemStack.getItemMeta();
+      final GameProfile profile = new GameProfile(UUID.randomUUID(), null);
+      final byte[] encoded = ENCODER.encode(String.format("{textures:{SKIN:{url:\"%s\"}}}", url).getBytes());
+      final Property property = new Property("textures", new String(encoded));
+      profile.getProperties().put("textures", property);
+      // many textures much wow
+
+      PROFILE_FIELD_SETTER.invoke(itemMeta, profile);
+      itemStack.setItemMeta(itemMeta);
     } catch (final Throwable throwable) {
+      // shouldn't throw, simply notify the failure and return the default item stack.
       throwable.printStackTrace();
     }
 

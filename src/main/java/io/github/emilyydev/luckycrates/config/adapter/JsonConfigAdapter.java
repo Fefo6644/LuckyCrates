@@ -24,12 +24,12 @@
 
 package io.github.emilyydev.luckycrates.config.adapter;
 
-import io.github.emilyydev.luckycrates.LuckyCratesPlugin;
-import io.github.emilyydev.luckycrates.config.ConfigAdapter;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
+import io.github.emilyydev.luckycrates.LuckyCratesPlugin;
+import io.github.emilyydev.luckycrates.config.ConfigAdapter;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -60,7 +60,7 @@ public final class JsonConfigAdapter extends ConfigAdapter {
 
         final String message = String.format("There was an error reading %s, making backup and generating an empty JSON file. "
                                              + "Please send the faulty file to the plugin author!",
-                                             this.configPath.toString());
+                                             this.configPath);
         this.plugin.getLogger().warning(message);
         exception.printStackTrace();
 

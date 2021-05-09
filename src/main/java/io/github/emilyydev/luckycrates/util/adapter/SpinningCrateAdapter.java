@@ -25,10 +25,11 @@
 package io.github.emilyydev.luckycrates.util.adapter;
 
 
-import io.github.emilyydev.luckycrates.internal.SpinningCrate;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import io.github.emilyydev.luckycrates.internal.CrateMap;
+import io.github.emilyydev.luckycrates.internal.SpinningCrate;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 
@@ -47,7 +48,7 @@ public final class SpinningCrateAdapter extends TypeAdapter<SpinningCrate> {
 
     out.name("uuid").value(String.valueOf(crate.getUuid()));
     out.name("location");
-    LocationAdapter.ADAPTER.write(out, crate.getLocation());
+    CrateMap.GSON.toJson(crate.getLocation(), Location.class, out);
     out.name("type").value(crate.getType());
     out.name("hiddenUntil").value(crate.getHiddenUntil());
     out.name("shouldDisappear").value(crate.shouldDisappear());
@@ -74,7 +75,7 @@ public final class SpinningCrateAdapter extends TypeAdapter<SpinningCrate> {
           break;
 
         case "location":
-          location = LocationAdapter.ADAPTER.read(in);
+          location = CrateMap.GSON.fromJson(in, Location.class);
           break;
 
         case "type":

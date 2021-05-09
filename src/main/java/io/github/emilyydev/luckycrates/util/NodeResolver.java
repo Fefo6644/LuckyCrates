@@ -28,7 +28,9 @@ import com.google.common.collect.ImmutableList;
 import net.milkbowl.vault.chat.Chat;
 import org.bukkit.entity.Player;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 public final class NodeResolver {
 
@@ -50,31 +52,82 @@ public final class NodeResolver {
    *                                    (too many periods '.' unescaped)</li>
    *                                  </ul>
    */
-  public static boolean determineNode(final Player player, final String node, final Chat vaultChat) throws IllegalArgumentException {
-    final List<String> split = splitByUnescapedPeriods(node.trim());
+  public static boolean checkNode(final Player player, final String node, final Chat vaultChat) throws IllegalArgumentException {
+    final NodeType.Info nodeInfo = determineNodeType(node);
+    switch (nodeInfo.nodeType) {
+      case PARENT_GROUP: {
+        return vaultChat.playerInGroup(player, nodeInfo.getPart(0));
+      }
+
+      case META_VARIABLE: {
+        final String key = nodeInfo.getPart(0);
+        final String expectedValue = nodeInfo.getPart(1);
+        final String actualValue = vaultChat.getPlayerInfoString(player, key, null);
+        return expectedValue.equalsIgnoreCase(actualValue);
+      }
+
+      case PERMISSION: {
+        return player.hasPermission(nodeInfo.getPart(0));
+      }
+
+      default: {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * Determines the type of a node based on its contents:
+   * <ul>
+   *   <li>{@code group.<group>} -> {@link NodeType#PARENT_GROUP}</li>
+   *   <li>{@code meta.<key>.<value>} -> {@link NodeType#META_VARIABLE}</li>
+   *   <li>anything else -> {@link NodeType#PERMISSION}</li>
+   * </ul>
+   * This method also provides information about said node, not only the type but more specifically
+   * its parts and contents, indexed accordingly.
+   *
+   * @param node the node to determine its type.
+   * @return information about the node provided.
+   * @throws IllegalArgumentException if:
+   *                                  <ul>
+   *                                    <li>the node contains effectively no "sections" separated by periods '.'</li>
+   *                                    <li>the node contains whitespace characters ({@link Character#isWhitespace(char)})</li>
+   *                                    <li>the node is a group node ({@code "group.<group>"}) and is malformed
+   *                                    (too many periods '.' unescaped)</li>
+   *                                    <li>the node is a meta variable node ({@code "meta.<key>.<value>"}) and is malformed
+   *                                    (too many periods '.' unescaped)</li>
+   *                                  </ul>
+   */
+  static NodeType.Info determineNodeType(String node) {
+    // package-private for unit testing
+    node = node.trim();
+    final List<String> split = splitByUnescapedPeriods(node);
     if (split.isEmpty()) {
       throw new IllegalArgumentException(String.format("Node is effectively empty: %s", node));
     }
 
-    final String discriminator = split.get(0);
-    if (discriminator.equalsIgnoreCase("group")) {
-      if (split.size() > 2) {
-        throw new IllegalArgumentException(String.format("Malformed group node (escape any periods in the group name): %s", node));
+    final String discriminator = split.get(0).toLowerCase(Locale.ROOT);
+    switch (discriminator) {
+      case "group": {
+        if (split.size() != 2) {
+          throw new IllegalArgumentException(String.format("Malformed group node (escape any periods in the group name): %s", node));
+        }
+        return NodeType.PARENT_GROUP.info(split.get(1));
       }
-      return vaultChat.playerInGroup(player, split.get(1));
-    }
 
-    if (discriminator.equalsIgnoreCase("meta")) {
-      if (split.size() > 3) {
-        throw new IllegalArgumentException(String.format("Malformed meta variable node (escape any periods in the key/value): %s", node));
+      case "meta": {
+        if (split.size() != 3) {
+          throw new IllegalArgumentException(String.format("Malformed meta variable node (escape any periods in the key/value): %s", node));
+        }
+        final String key = split.get(1);
+        final String expectedValue = split.get(2);
+        return NodeType.META_VARIABLE.info(key, expectedValue);
       }
-      final String key = split.get(1);
-      final String expectedValue = split.get(2);
-      final String actualValue = vaultChat.getPlayerInfoString(player, key, null);
-      return expectedValue.equalsIgnoreCase(actualValue);
-    }
 
-    return player.hasPermission(node.trim());
+      default: {
+        return NodeType.PERMISSION.info(node.trim());
+      }
+    }
   }
 
   /**
@@ -87,7 +140,7 @@ public final class NodeResolver {
    *                                  for any {@code char} in the input node.
    */
   static List<String> splitByUnescapedPeriods(final String node) throws IllegalArgumentException {
-    // package-private for unit testing brrrr
+    // package-private for unit testing
     final ImmutableList.Builder<String> builder = ImmutableList.builder();
 
     boolean escaping = false;
@@ -130,5 +183,38 @@ public final class NodeResolver {
 
   private NodeResolver() {
     throw new UnsupportedOperationException();
+  }
+
+  enum NodeType {
+    PERMISSION,
+    PARENT_GROUP,
+    META_VARIABLE;
+
+    NodeType.Info info(final String... parts) {
+      return new Info(this, ImmutableList.copyOf(parts));
+    }
+
+    static class Info {
+
+      private final NodeType nodeType;
+      private final List<String> parts;
+
+      private Info(final NodeType nodeType, final Collection<String> parts) {
+        this.nodeType = nodeType;
+        this.parts = ImmutableList.copyOf(parts);
+      }
+
+      public NodeType getNodeType() {
+        return this.nodeType;
+      }
+
+      public List<String> getParts() {
+        return this.parts;
+      }
+
+      public String getPart(final int index) {
+        return getParts().get(index);
+      }
+    }
   }
 }
